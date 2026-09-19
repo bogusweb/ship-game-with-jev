@@ -45,7 +45,7 @@ npm run lint
 
 ## Project stages
 
-1. **Scaffold** — Next.js + Tailwind + shadcn, Netlify-ready
+1. **Scaffold** — Next.js + Tailwind + shadcn, Netlify-ready (this stage)
 2. **Game rules engine** — 10×10 board, fleet placement, no-touch rule
 3. **UI** — fleet placement, dual boards, Jev move journal
 4. **Jev backend proxy** — secure API integration
