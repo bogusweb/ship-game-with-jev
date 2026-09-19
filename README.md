@@ -1,6 +1,6 @@
 # Ship Game with Jev
 
-Browser proof of concept for **Battleship vs Jev** — a warm, playful game inspired by [Jev Tac Toe](https://jevtactoe.neato.fun/).
+Browser proof of concept for **Battleship vs Jev** — a warm, playful naval duel against Jev.
 
 ## Stack
 
