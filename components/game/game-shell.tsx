@@ -136,33 +136,51 @@ export function GameShell() {
       setJevThinking(true);
       setJevError(null);
 
+      let currentState = state;
+      let currentView = view;
+
       try {
-        const moves = legalMoves(view);
-        if (moves.length === 0) throw new Error("No legal moves for Jev");
+        while (
+          currentState.phase === "playing" &&
+          currentState.turn === "jev"
+        ) {
+          const moves = legalMoves(currentView);
+          if (moves.length === 0) throw new Error("No legal moves for Jev");
 
-        const jevResponse = await fetchJevShot({
-          move: state.moveCount + 1,
-          legalMoves: moves,
-          playerView: view,
-        });
-        const chosen = jevResponse.chosen;
-        const entry = toJournalEntry(state.moveCount + 1, jevResponse);
-        setJournal((prev) => [...prev, entry]);
+          const jevResponse = await fetchJevShot({
+            move: currentState.moveCount + 1,
+            legalMoves: moves,
+            playerView: currentView,
+          });
+          const chosen = jevResponse.chosen;
+          const entry = toJournalEntry(currentState.moveCount + 1, jevResponse);
+          setJournal((prev) => [...prev, entry]);
 
-        const outcome = jevShoot(state, chosen.row, chosen.col, view);
-        setGame(outcome.state);
-        setPlayerView(outcome.playerView);
+          const outcome = jevShoot(
+            currentState,
+            chosen.row,
+            chosen.col,
+            currentView,
+          );
+          currentState = outcome.state;
+          currentView = outcome.playerView;
+          setGame(currentState);
+          setPlayerView(currentView);
 
-        if (outcome.result.outcome === "sunk") {
-          setStatus(`Jev sunk your ${SHIP_NAMES[outcome.result.shipLength ?? 2] ?? "ship"}!`);
-        } else if (outcome.result.outcome === "hit") {
-          setStatus("Jev hit one of your ships!");
-        } else {
-          setStatus("Jev missed. Your turn.");
-        }
+          if (outcome.result.outcome === "sunk") {
+            setStatus(
+              `Jev sunk your ${SHIP_NAMES[outcome.result.shipLength ?? 2] ?? "ship"}!`,
+            );
+          } else if (outcome.result.outcome === "hit") {
+            setStatus("Jev hit — firing again…");
+          } else {
+            setStatus("Jev missed. Your turn.");
+          }
 
-        if (outcome.state.phase === "lost") {
-          setStatus("Jev sank your fleet. Better luck next round!");
+          if (currentState.phase === "lost") {
+            setStatus("Jev sank your fleet. Better luck next round!");
+            break;
+          }
         }
       } catch (e) {
         setJevError(e instanceof Error ? e.message : "Jev could not choose a shot");
@@ -287,7 +305,7 @@ export function GameShell() {
                     : "Jev fires here"
                 }
                 getCellVisual={playerBoardVisual}
-                showShips={game.phase === "placement" || game.phase === "lost"}
+                showShips
                 onCellClick={
                   game.phase === "placement" ? handlePlaceClick : undefined
                 }
