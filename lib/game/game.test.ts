@@ -15,6 +15,7 @@ import {
   createOpponentView,
   fireAt,
   legalMoves,
+  unsunkShipLengths,
 } from "./shooting";
 import type { ShipPlacement } from "./types";
 import {
@@ -103,17 +104,18 @@ describe("placement", () => {
   });
 });
 
+function boardWithSingleShip() {
+  let board = createEmptyBoard();
+  board = placeShip(board, {
+    id: "ship-1",
+    length: 2,
+    orientation: "horizontal",
+    origin: { row: 5, col: 5 },
+  });
+  return board;
+}
+
 describe("shooting", () => {
-  function boardWithSingleShip() {
-    let board = createEmptyBoard();
-    board = placeShip(board, {
-      id: "ship-1",
-      length: 2,
-      orientation: "horizontal",
-      origin: { row: 5, col: 5 },
-    });
-    return board;
-  }
 
   it("records a miss", () => {
     const board = boardWithSingleShip();
@@ -163,6 +165,47 @@ describe("shooting", () => {
   it("starts with full board legal moves", () => {
     const view = createOpponentView();
     assert.equal(legalMoves(view).length, BOARD_SIZE * BOARD_SIZE);
+  });
+});
+
+describe("unsunkShipLengths", () => {
+  it("is empty on an empty board and after every ship is sunk", () => {
+    const empty = createEmptyBoard();
+    assert.deepEqual(unsunkShipLengths(empty), []);
+
+    const board = boardWithSingleShip();
+    assert.deepEqual(unsunkShipLengths(board), [2]);
+
+    const first = fireAt(board, createOpponentView(), 5, 5);
+    assert.deepEqual(unsunkShipLengths(first.board), [2]);
+
+    const second = fireAt(first.board, first.view, 5, 6);
+    assert.equal(second.result.outcome, "sunk");
+    assert.deepEqual(unsunkShipLengths(second.board), []);
+  });
+
+  it("drops only the sunk length and keeps the rest of a real fleet", () => {
+    const state = autoPlacePlayerFleet(createNewGame());
+    const start = unsunkShipLengths(state.jevBoard);
+    assert.deepEqual(start, [...FLEET_LENGTHS].sort((a, b) => b - a));
+
+    const ship = state.jevBoard.ships[0]!;
+    let board = state.jevBoard;
+    let view = state.opponentView;
+    let last = fireAt(board, view, ship.cells[0]!.row, ship.cells[0]!.col);
+    for (const cell of ship.cells.slice(1)) {
+      last = fireAt(last.board, last.view, cell.row, cell.col);
+      board = last.board;
+      view = last.view;
+    }
+    assert.equal(last.result.outcome, "sunk");
+
+    const remaining = unsunkShipLengths(last.board);
+    const expected: number[] = [...start];
+    const sunkIndex = expected.indexOf(ship.length);
+    assert.ok(sunkIndex >= 0);
+    expected.splice(sunkIndex, 1);
+    assert.deepEqual(remaining, expected);
   });
 });
 
