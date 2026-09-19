@@ -1,5 +1,9 @@
 import type { Handler, HandlerEvent } from "@netlify/functions";
-import { chooseJevShot, type JevShotRequest } from "../../lib/jev/shot";
+import {
+  chooseJevShot,
+  choosePlayerNextShot,
+  type JevShotRequest,
+} from "../../lib/jev/shot";
 
 declare const Netlify: {
   env: {
@@ -14,8 +18,10 @@ export const handler: Handler = async (event: HandlerEvent) => {
 
   try {
     const body = JSON.parse(event.body ?? "{}") as JevShotRequest;
+    const wantsShot = Boolean(body.legalMoves?.length);
+    const wantsPrediction = Boolean(body.playerLegalTargets?.length);
 
-    if (!body.legalMoves?.length) {
+    if (!wantsShot && !wantsPrediction) {
       return {
         statusCode: 400,
         body: JSON.stringify({ error: "No legal moves provided" }),
@@ -23,7 +29,9 @@ export const handler: Handler = async (event: HandlerEvent) => {
     }
 
     const apiKey = Netlify.env.get("SHIP_GAME_TYPESAFE_API_KEY");
-    const response = await chooseJevShot(apiKey, body);
+    const response = wantsShot
+      ? await chooseJevShot(apiKey, body)
+      : await choosePlayerNextShot(apiKey, body);
 
     return {
       statusCode: 200,
