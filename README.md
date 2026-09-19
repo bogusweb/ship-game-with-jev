@@ -1,6 +1,6 @@
 # Ship Game with Jev
 
-Browser proof of concept for **Battleship vs Jev** — a warm, playful game inspired by [Jev Tac Toe](https://jevtactoe.neato.fun/).
+Browser proof of concept for **Battleship vs Jev** — a warm, playful naval duel against Jev.
 
 ## Stack
 
@@ -45,7 +45,7 @@ npm run lint
 
 ## Project stages
 
-1. **Scaffold** — Next.js + Tailwind + shadcn, Netlify-ready (this stage)
+1. **Scaffold** — Next.js + Tailwind + shadcn, Netlify-ready
 2. **Game rules engine** — 10×10 board, fleet placement, no-touch rule
 3. **UI** — fleet placement, dual boards, Jev move journal
 4. **Jev backend proxy** — secure API integration
