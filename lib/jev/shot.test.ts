@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
-import { createOpponentView } from "../game/shooting";
+import { createOpponentView, legalMoves } from "../game/shooting";
 import {
   asShotPercent,
   chosenShotPercent,
@@ -36,17 +36,26 @@ describe("TypeSafe System One payload", () => {
     assert.equal(body.model, JEV_MODEL);
     assert.equal(body.model, "jev-latest");
     assert.equal(body.questions.shot?.type, "choice");
-    assert.deepEqual(body.questions.shot?.criteria, {
-      E5: "Fire at E5",
-      F6: "Fire at F6",
-      G5: "Fire at G5",
-    });
+    const criteria = body.questions.shot?.criteria ?? {};
+    assert.deepEqual(Object.keys(criteria).sort(), ["E5", "F6", "G5"]);
+    for (const [key, text] of Object.entries(criteria)) {
+      assert.match(text, new RegExp(`Fire at ${key}`));
+      assert.match(text, /HUNT|TARGET/);
+      assert.match(text, /heat=/);
+      assert.ok(text.length <= 255);
+    }
     assert.equal(
       "options" in (body.questions.shot ?? {}),
       false,
       "Choice must use criteria; options causes HTTP 422",
     );
+    assert.match(body.questions.shot?.instructions ?? "", /never walk the grid/i);
+    assert.match(body.questions.shot?.instructions ?? "", /hunt/i);
+    assert.match(body.questions.shot?.instructions ?? "", /target/i);
+    assert.match(body.questions.shot?.instructions ?? "", /parity/i);
     assert.ok(body.state.includes("Opponent board"));
+    assert.match(body.state, /Remaining unsunk lengths/);
+    assert.match(body.state, /Mode: HUNT/);
     assert.equal(body.questions.playerNextShot, undefined);
   });
 
@@ -87,6 +96,25 @@ describe("TypeSafe System One payload", () => {
     assert.ok(keys.length <= 255);
     assert.equal(keys[0], "A1");
     assert.ok(next?.criteria[keys[0]!]?.includes("player fires next"));
+  });
+
+  it("sorts Jev fire criteria by heatmap, not row-major leftovers, when targeting a hit", () => {
+    const view = createOpponentView();
+    for (let col = 0; col < 10; col++) view.cells[0][col] = "miss";
+    view.cells[4][4] = "hit";
+    const body = buildSystemOneBody({
+      move: 20,
+      legalMoves: legalMoves(view),
+      playerView: view,
+    });
+    const keys = Object.keys(body.questions.shot?.criteria ?? {});
+    assert.ok(keys.length >= 2);
+    assert.ok(keys.length <= MAX_CHOICE_CRITERIA);
+    assert.notEqual(keys[0], "A2");
+    assert.ok(["D5", "F5", "E4", "E6"].includes(keys[0] ?? ""));
+    assert.match(body.state, /Mode: TARGET/);
+    assert.match(body.state, /Unresolved hits: E5/);
+    assert.match(body.questions.shot?.criteria[keys[0]!] ?? "", /TARGET/);
   });
 });
 
@@ -190,6 +218,19 @@ describe("journal honesty", () => {
     assert.equal(parsed.chosenPercent, parsed.probabilities[0]?.percent);
     assert.ok(parsed.chosenPercent > 0);
   });
+
+  it("heuristic fallback fires at the hit's neighbor, not the first leftover cell", () => {
+    const view = createOpponentView();
+    for (let col = 0; col < 10; col++) view.cells[0][col] = "miss";
+    view.cells[4][4] = "hit";
+    const parsed = fallbackShot(
+      { move: 20, legalMoves: legalMoves(view), playerView: view },
+      0,
+    );
+    assert.equal(parsed.source, "fallback");
+    assert.notEqual(parsed.label, "A2");
+    assert.ok(["D5", "F5", "E4", "E6"].includes(parsed.label));
+  });
 });
 
 describe("player next-shot prediction parse", () => {
@@ -258,5 +299,39 @@ describe("live TypeSafe", () => {
     assert.ok(["B1", "C1", "A2"].includes(response.prediction?.label ?? ""));
     assert.ok((response.prediction?.chosenPercent ?? 0) > 0);
     assert.equal(response.predictionError ?? null, null);
+  });
+
+  it("does not walk the first leftover cell mid-hunt, still source jev", {
+    skip: !apiKey,
+  }, async () => {
+    const view = createOpponentView();
+    for (let col = 0; col < 10; col++) view.cells[0][col] = "miss";
+    for (let col = 0; col < 4; col++) view.cells[1][col] = "miss";
+    const remaining = legalMoves(view);
+    const firstLeftover = remaining[0]!;
+    const firstLabel = `${String.fromCharCode(65 + firstLeftover.col)}${firstLeftover.row + 1}`;
+    assert.equal(firstLabel, "E2");
+    const response = await chooseJevShot(apiKey, {
+      move: 15,
+      legalMoves: remaining,
+      playerView: view,
+    });
+    assert.equal(response.source, "jev");
+    assert.notEqual(response.label, firstLabel);
+  });
+
+  it("targets an unresolved hit instead of walking A1 leftovers", {
+    skip: !apiKey,
+  }, async () => {
+    const view = createOpponentView();
+    for (let col = 0; col < 10; col++) view.cells[0][col] = "miss";
+    view.cells[4][4] = "hit";
+    const response = await chooseJevShot(apiKey, {
+      move: 16,
+      legalMoves: legalMoves(view),
+      playerView: view,
+    });
+    assert.equal(response.source, "jev");
+    assert.ok(["D5", "F5", "E4", "E6"].includes(response.label));
   });
 });
