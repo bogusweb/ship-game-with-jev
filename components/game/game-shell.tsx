@@ -27,8 +27,7 @@ import { MoveJournal } from "./move-journal";
 import { ThinkingIndicator } from "./thinking-indicator";
 
 function mockJevPick(moves: { row: number; col: number }[]) {
-  const pick = moves[Math.floor(Math.random() * moves.length)];
-  return pick;
+  return moves[Math.floor(Math.random() * moves.length)];
 }
 
 export function GameShell() {
@@ -126,7 +125,6 @@ export function GameShell() {
     async (state: GameState, view: OpponentView) => {
       setJevThinking(true);
       setJevError(null);
-      const start = performance.now();
 
       try {
         await new Promise((r) => setTimeout(r, 600 + Math.random() * 400));
@@ -134,8 +132,7 @@ export function GameShell() {
         if (moves.length === 0) throw new Error("No legal moves for Jev");
 
         const chosen = mockJevPick(moves);
-        const ms = Math.round(performance.now() - start);
-        const entry = buildMockJournalEntry(state.moveCount + 1, chosen, moves, ms);
+        const entry = buildMockJournalEntry(state.moveCount + 1, chosen, moves);
         setJournal((prev) => [...prev, entry]);
 
         const outcome = jevShoot(state, chosen.row, chosen.col, view);
@@ -265,9 +262,7 @@ export function GameShell() {
 
         <div className="grid gap-8 lg:grid-cols-[1fr_320px]">
           <div className="grid gap-8 md:grid-cols-2">
-            <div
-              onMouseLeave={() => setHoverCell(null)}
-            >
+            <div onMouseLeave={() => setHoverCell(null)}>
               <GameBoard
                 title="Your fleet"
                 subtitle={
