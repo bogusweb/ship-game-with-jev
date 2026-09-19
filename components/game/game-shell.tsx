@@ -21,14 +21,30 @@ import {
 } from "@/lib/game";
 import type { GameState, OpponentView, Orientation, ShotCellState } from "@/lib/game";
 import type { JournalEntry } from "@/lib/game/journal";
-import { toJournalEntry, type JevShotRequest } from "@/lib/jev/shot";
+import {
+  archiveMatchShots,
+  loadStoredPlayerShotHistory,
+  makePlayerShotRecord,
+  saveStoredPlayerShotHistory,
+  type PlayerShotRecord,
+} from "@/lib/game/player-shot-history";
+import {
+  toJournalEntry,
+  type JevShotRequest,
+  type JevShotResponse,
+  type PlayerNextShotResponse,
+} from "@/lib/jev/shot";
 import { shipAtCell } from "@/lib/game/placement";
 import type { CellVisual } from "./board-cell";
 import { GameBoard } from "./game-board";
 import { MoveJournal } from "./move-journal";
+import {
+  PlayerShotPrediction,
+  type PredictionStatus,
+} from "./player-shot-prediction";
 import { TurnIndicator, turnKindFromState } from "./turn-indicator";
 
-async function fetchJevShot(request: JevShotRequest) {
+async function postJev(request: JevShotRequest) {
   const res = await fetch("/api/jev/shot", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
@@ -54,6 +70,13 @@ export function GameShell() {
   const [isJevThinking, setIsJevThinking] = useState(false);
   const [jevError, setJevError] = useState<string | null>(null);
   const [status, setStatus] = useState<string>("Place your fleet on the left board.");
+  const [matchShots, setMatchShots] = useState<PlayerShotRecord[]>([]);
+  const [recentShots, setRecentShots] = useState<PlayerShotRecord[]>([]);
+  const [predictionStatus, setPredictionStatus] =
+    useState<PredictionStatus>("empty");
+  const [predictionLabel, setPredictionLabel] = useState<string | undefined>();
+  const [predictionPercent, setPredictionPercent] = useState<number | undefined>();
+  const [predictionError, setPredictionError] = useState<string | null>(null);
 
   const currentShipLength = nextShipLength(game.playerBoard);
   const placedCount = game.playerBoard.ships.length;
@@ -132,13 +155,36 @@ export function GameShell() {
     setStatus("Fleet auto-placed. Fire at Jev's waters on the right.");
   };
 
+  const applyPrediction = useCallback((result: {
+    prediction?: { label: string; chosenPercent: number } | null;
+    predictionError?: string | null;
+  }) => {
+    if (result.prediction) {
+      setPredictionStatus("ready");
+      setPredictionLabel(result.prediction.label);
+      setPredictionPercent(result.prediction.chosenPercent);
+      setPredictionError(null);
+      return;
+    }
+    setPredictionStatus("error");
+    setPredictionError(
+      result.predictionError || "Could not predict your next shot.",
+    );
+  }, []);
+
   const runJevTurn = useCallback(
-    async (state: GameState, view: OpponentView) => {
+    async (
+      state: GameState,
+      view: OpponentView,
+      history: { thisMatch: PlayerShotRecord[]; recent: PlayerShotRecord[] },
+      playerLegalTargets: { row: number; col: number }[],
+    ) => {
       setIsJevThinking(true);
       setJevError(null);
 
       let currentState = state;
       let currentView = view;
+      let askedPrediction = false;
 
       try {
         while (
@@ -148,11 +194,21 @@ export function GameShell() {
           const moves = legalMoves(currentView);
           if (moves.length === 0) throw new Error("No legal moves for Jev");
 
-          const jevResponse = await fetchJevShot({
+          const jevResponse = (await postJev({
             move: currentState.moveCount + 1,
             legalMoves: moves,
             playerView: currentView,
-          });
+            playerShotHistory: history,
+            playerLegalTargets: askedPrediction
+              ? undefined
+              : playerLegalTargets,
+          })) as JevShotResponse;
+          if (!askedPrediction) {
+            askedPrediction = true;
+            if (playerLegalTargets.length > 0) {
+              applyPrediction(jevResponse);
+            }
+          }
           const chosen = jevResponse.chosen;
           const entry = toJournalEntry(currentState.moveCount + 1, jevResponse);
           setJournal((prev) => [...prev, entry]);
@@ -185,11 +241,46 @@ export function GameShell() {
         }
       } catch (e) {
         setJevError(e instanceof Error ? e.message : "Jev could not choose a shot");
+        if (!askedPrediction) {
+          applyPrediction({
+            prediction: null,
+            predictionError: "Could not predict your next shot.",
+          });
+        }
       } finally {
         setIsJevThinking(false);
       }
     },
-    [],
+    [applyPrediction],
+  );
+
+  const runPredictionOnly = useCallback(
+    async (
+      history: { thisMatch: PlayerShotRecord[]; recent: PlayerShotRecord[] },
+      playerLegalTargets: { row: number; col: number }[],
+      view: OpponentView,
+    ) => {
+      if (playerLegalTargets.length === 0) {
+        setPredictionStatus("empty");
+        return;
+      }
+      try {
+        const response = (await postJev({
+          move: 0,
+          legalMoves: [],
+          playerView: view,
+          playerShotHistory: history,
+          playerLegalTargets,
+        })) as PlayerNextShotResponse;
+        applyPrediction(response);
+      } catch {
+        applyPrediction({
+          prediction: null,
+          predictionError: "Could not predict your next shot.",
+        });
+      }
+    },
+    [applyPrediction],
   );
 
   const handleFire = (row: number, col: number) => {
@@ -197,6 +288,17 @@ export function GameShell() {
     try {
       const { state, result } = playerShoot(game, row, col);
       setGame(state);
+
+      const nextMatchShots = [
+        ...matchShots,
+        makePlayerShotRecord({ row, col }, result.outcome),
+      ];
+      setMatchShots(nextMatchShots);
+      saveStoredPlayerShotHistory(nextMatchShots, recentShots);
+      const history = { thisMatch: nextMatchShots, recent: recentShots };
+      const playerTargets = legalMoves(state.opponentView);
+      setPredictionStatus("loading");
+      setPredictionError(null);
 
       if (result.outcome === "sunk") {
         setStatus(`Sunk! Jev's ${SHIP_NAMES[result.shipLength ?? 2] ?? "ship"} is gone.`);
@@ -208,11 +310,14 @@ export function GameShell() {
 
       if (state.phase === "won") {
         setStatus("You sank Jev's fleet. Victory!");
+        void runPredictionOnly(history, playerTargets, playerView);
         return;
       }
 
       if (state.turn === "jev") {
-        void runJevTurn(state, playerView);
+        void runJevTurn(state, playerView, history, playerTargets);
+      } else {
+        void runPredictionOnly(history, playerTargets, playerView);
       }
     } catch (e) {
       setStatus(e instanceof Error ? e.message : "Invalid shot");
@@ -220,11 +325,19 @@ export function GameShell() {
   };
 
   const handleNewGame = () => {
+    const nextRecent = archiveMatchShots(matchShots, recentShots);
+    setRecentShots(nextRecent);
+    setMatchShots([]);
+    saveStoredPlayerShotHistory([], nextRecent);
     setGame(createNewGame());
     setPlayerView(createPlayerAttackView());
     setJournal([]);
     setJevError(null);
     setIsJevThinking(false);
+    setPredictionStatus("empty");
+    setPredictionLabel(undefined);
+    setPredictionPercent(undefined);
+    setPredictionError(null);
     setStatus("Place your fleet on the left board.");
   };
 
@@ -236,6 +349,13 @@ export function GameShell() {
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
+  }, []);
+
+  useEffect(() => {
+    const stored = loadStoredPlayerShotHistory();
+    const recent = archiveMatchShots(stored.thisMatch, stored.recent);
+    setRecentShots(recent);
+    saveStoredPlayerShotHistory([], recent);
   }, []);
 
   useEffect(() => {
@@ -345,11 +465,19 @@ export function GameShell() {
             />
           </div>
 
-          <MoveJournal
-            entries={journal}
-            thinking={isJevThinking}
-            error={jevError}
-          />
+          <div className="flex flex-col gap-4">
+            <PlayerShotPrediction
+              status={predictionStatus}
+              label={predictionLabel}
+              percent={predictionPercent}
+              error={predictionError}
+            />
+            <MoveJournal
+              entries={journal}
+              thinking={isJevThinking}
+              error={jevError}
+            />
+          </div>
         </div>
 
         {(gameOver || game.phase === "playing") && (

@@ -8,10 +8,12 @@ import {
 } from "../game/journal";
 import {
   JEV_MODEL,
+  MAX_CHOICE_CRITERIA,
   buildSystemOneBody,
   chooseJevShot,
   fallbackShot,
   parseJevResponse,
+  parsePlayerShotPrediction,
   toJournalEntry,
   type JevShotRequest,
 } from "./shot";
@@ -33,18 +35,58 @@ describe("TypeSafe System One payload", () => {
     const body = buildSystemOneBody(requestWithCells(["E5", "F6", "G5"]));
     assert.equal(body.model, JEV_MODEL);
     assert.equal(body.model, "jev-latest");
-    assert.equal(body.questions.shot.type, "choice");
-    assert.deepEqual(body.questions.shot.criteria, {
+    assert.equal(body.questions.shot?.type, "choice");
+    assert.deepEqual(body.questions.shot?.criteria, {
       E5: "Fire at E5",
       F6: "Fire at F6",
       G5: "Fire at G5",
     });
     assert.equal(
-      "options" in body.questions.shot,
+      "options" in (body.questions.shot ?? {}),
       false,
       "Choice must use criteria; options causes HTTP 422",
     );
     assert.ok(body.state.includes("Opponent board"));
+    assert.equal(body.questions.playerNextShot, undefined);
+  });
+
+  it("injects player hunting history and a parallel next-shot Choice, capped at 255", () => {
+    const history = {
+      thisMatch: [
+        { cell: { row: 4, col: 4 }, label: "E5", outcome: "HIT" as const },
+        { cell: { row: 4, col: 5 }, label: "F5", outcome: "MISS" as const },
+      ],
+      recent: [
+        { cell: { row: 0, col: 0 }, label: "A1", outcome: "MISS" as const },
+      ],
+    };
+    const playerLegalTargets = Array.from({ length: 300 }, (_, i) => ({
+      row: Math.floor(i / 26),
+      col: i % 26,
+    }));
+    const body = buildSystemOneBody({
+      ...requestWithCells(["E5", "F6", "G5"]),
+      playerShotHistory: history,
+      playerLegalTargets,
+    });
+
+    assert.equal(body.model, "jev-latest");
+    assert.equal(body.questions.shot?.type, "choice");
+    assert.equal("options" in (body.questions.shot ?? {}), false);
+    assert.match(body.state, /1\. E5 HIT/);
+    assert.match(body.state, /2\. F5 MISS/);
+    assert.match(body.state, /A1 MISS/);
+    assert.match(body.state, /humans hunt similarly over time/i);
+    assert.ok(body.state.includes("Opponent board"));
+
+    const next = body.questions.playerNextShot;
+    assert.equal(next?.type, "choice");
+    assert.equal("options" in (next ?? {}), false);
+    const keys = Object.keys(next?.criteria ?? {});
+    assert.equal(keys.length, MAX_CHOICE_CRITERIA);
+    assert.ok(keys.length <= 255);
+    assert.equal(keys[0], "A1");
+    assert.ok(next?.criteria[keys[0]!]?.includes("player fires next"));
   });
 });
 
@@ -150,6 +192,31 @@ describe("journal honesty", () => {
   });
 });
 
+describe("player next-shot prediction parse", () => {
+  it("reads the chosen cell and its list percent, not model confidence", () => {
+    const targets = requestWithCells(["E6", "F5", "G5"]).legalMoves;
+    const parsed = parsePlayerShotPrediction(targets, {
+      choice: "F5",
+      probabilities: { F5: 0.44, E6: 0.31, G5: 0.25 },
+      confidence: 0.62,
+    });
+    assert.equal(parsed.source, "jev");
+    assert.equal(parsed.label, "F5");
+    assert.equal(parsed.chosenPercent, 44);
+    assert.deepEqual(parsed.chosen, { row: 4, col: 5 });
+  });
+
+  it("falls back to the highest legal probability when the choice is not a remaining cell", () => {
+    const targets = requestWithCells(["A1", "B2", "C3"]).legalMoves;
+    const parsed = parsePlayerShotPrediction(targets, {
+      choice: "J10",
+      probabilities: { B2: 0.5, A1: 0.2, C3: 0.1, J10: 0.9 },
+    });
+    assert.equal(parsed.label, "B2");
+    assert.equal(parsed.chosenPercent, 50);
+  });
+});
+
 describe("live TypeSafe", () => {
   const apiKey = process.env.SHIP_GAME_TYPESAFE_API_KEY;
   it("returns source jev with chosen cell % matching the list", {
@@ -162,5 +229,34 @@ describe("live TypeSafe", () => {
     assert.equal(response.source, "jev");
     assert.equal(response.probabilities[0]?.label, response.label);
     assert.equal(response.chosenPercent, response.probabilities[0]?.percent);
+  });
+
+  it("returns a next-shot prediction without dropping source jev", {
+    skip: !apiKey,
+  }, async () => {
+    const response = await chooseJevShot(apiKey, {
+      ...requestWithCells(["E5", "F6", "G5"]),
+      playerShotHistory: {
+        thisMatch: [
+          {
+            cell: { row: 0, col: 0 },
+            label: "A1",
+            outcome: "MISS",
+          },
+        ],
+        recent: [],
+      },
+      playerLegalTargets: [
+        { row: 0, col: 1 },
+        { row: 0, col: 2 },
+        { row: 1, col: 0 },
+      ],
+    });
+    assert.equal(response.source, "jev");
+    assert.ok(response.prediction);
+    assert.equal(response.prediction?.source, "jev");
+    assert.ok(["B1", "C1", "A2"].includes(response.prediction?.label ?? ""));
+    assert.ok((response.prediction?.chosenPercent ?? 0) > 0);
+    assert.equal(response.predictionError ?? null, null);
   });
 });

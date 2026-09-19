@@ -7,14 +7,28 @@ import {
   type JournalEntry,
   type ShotPreference,
 } from "@/lib/game/journal";
+import {
+  formatPlayerShotHistoryForState,
+  type PlayerShotHistoryBundle,
+} from "@/lib/game/player-shot-history";
 import { formatBoardState } from "./tactics";
 
 export const JEV_MODEL = "jev-latest";
+export const MAX_CHOICE_CRITERIA = 255;
 
 export type JevShotRequest = {
   move: number;
   legalMoves: Coord[];
   playerView: OpponentView;
+  playerShotHistory?: PlayerShotHistoryBundle;
+  playerLegalTargets?: Coord[];
+};
+
+export type PlayerShotPrediction = {
+  chosen: Coord;
+  label: string;
+  chosenPercent: number;
+  source: "jev";
 };
 
 export type JevShotResponse = {
@@ -26,6 +40,8 @@ export type JevShotResponse = {
   confidence?: number;
   ms: number;
   source: "jev" | "fallback";
+  prediction?: PlayerShotPrediction | null;
+  predictionError?: string | null;
 };
 
 export type ChoiceAnswer = {
@@ -34,15 +50,18 @@ export type ChoiceAnswer = {
   confidence?: number;
 };
 
+export type ChoiceQuestion = {
+  type: "choice";
+  instructions: string;
+  criteria: Record<string, string>;
+};
+
 export type SystemOneRequestBody = {
   model: string;
   state: string;
   questions: {
-    shot: {
-      type: "choice";
-      instructions: string;
-      criteria: Record<string, string>;
-    };
+    shot?: ChoiceQuestion;
+    playerNextShot?: ChoiceQuestion;
   };
 };
 
@@ -84,6 +103,14 @@ export function sampleChoice(
   return entries[entries.length - 1]!.key;
 }
 
+export function capChoiceCoords(
+  cells: Coord[],
+  max = MAX_CHOICE_CRITERIA,
+): Coord[] {
+  if (cells.length <= max) return cells;
+  return cells.slice(0, max);
+}
+
 export function buildJevQuestions(legalMoves: Coord[]) {
   const criteria: Record<string, string> = {};
   for (const cell of legalMoves) {
@@ -100,11 +127,39 @@ export function buildJevQuestions(legalMoves: Coord[]) {
   };
 }
 
+export function buildPlayerNextShotQuestion(
+  legalTargets: Coord[],
+): ChoiceQuestion | undefined {
+  const capped = capChoiceCoords(legalTargets);
+  if (capped.length < 2) return undefined;
+  const criteria: Record<string, string> = {};
+  for (const cell of capped) {
+    const key = coordToKey(cell);
+    criteria[key] = `The player fires next at ${key}`;
+  }
+  return {
+    type: "choice",
+    instructions:
+      "Predict the player's next shot on remaining unknown cells of Jev's waters. Humans hunt similarly over time — use the shot history in the state.",
+    criteria,
+  };
+}
+
 export function buildSystemOneBody(request: JevShotRequest): SystemOneRequestBody {
+  const questions: SystemOneRequestBody["questions"] = {};
+  if (request.legalMoves?.length) {
+    questions.shot = buildJevQuestions(request.legalMoves).shot;
+  }
+  const playerNextShot = request.playerLegalTargets
+    ? buildPlayerNextShotQuestion(request.playerLegalTargets)
+    : undefined;
+  if (playerNextShot) {
+    questions.playerNextShot = playerNextShot;
+  }
   return {
     model: JEV_MODEL,
-    state: buildStateFromView(request.playerView),
-    questions: buildJevQuestions(request.legalMoves),
+    state: buildStateFromView(request.playerView, request.playerShotHistory),
+    questions,
   };
 }
 
@@ -204,6 +259,81 @@ export function parseJevResponse(
   );
 }
 
+function pickHighestLegalKey(
+  probabilities: Record<string, number>,
+  legalKeys: string[],
+): string {
+  let best = legalKeys[0]!;
+  let bestWeight = -1;
+  for (const key of legalKeys) {
+    const weight = probabilities[key] ?? 0;
+    if (weight > bestWeight) {
+      bestWeight = weight;
+      best = key;
+    }
+  }
+  return best;
+}
+
+export function parsePlayerShotPrediction(
+  legalTargets: Coord[],
+  answer: ChoiceAnswer,
+): PlayerShotPrediction {
+  const legalKeys = capChoiceCoords(legalTargets).map(coordToKey);
+  if (legalKeys.length === 0) {
+    throw new Error("No legal player targets to parse");
+  }
+  const chosenKey = legalKeys.includes(answer.choice)
+    ? answer.choice
+    : pickHighestLegalKey(answer.probabilities, legalKeys);
+  const preferences = preferencesFromMap(legalKeys, answer.probabilities);
+
+  return {
+    chosen: keyToCoord(chosenKey),
+    label: chosenKey,
+    chosenPercent: chosenShotPercent(keyToCoord(chosenKey), preferences),
+    source: "jev",
+  };
+}
+
+const PREDICTION_UNAVAILABLE = "Could not predict your next shot.";
+
+function attachPrediction(
+  shot: JevShotResponse,
+  prediction: PlayerShotPrediction | null,
+  predictionError?: string | null,
+): JevShotResponse {
+  return { ...shot, prediction, predictionError: predictionError ?? null };
+}
+
+function predictionFromTargets(
+  legalTargets: Coord[] | undefined,
+  answer: ChoiceAnswer | undefined,
+): { prediction: PlayerShotPrediction | null; predictionError?: string } {
+  if (!legalTargets || legalTargets.length === 0) {
+    return { prediction: null };
+  }
+  if (legalTargets.length === 1) {
+    const only = legalTargets[0]!;
+    return {
+      prediction: {
+        chosen: only,
+        label: coordToKey(only),
+        chosenPercent: 100,
+        source: "jev",
+      },
+    };
+  }
+  if (!answer) {
+    return { prediction: null, predictionError: PREDICTION_UNAVAILABLE };
+  }
+  try {
+    return { prediction: parsePlayerShotPrediction(legalTargets, answer) };
+  } catch {
+    return { prediction: null, predictionError: PREDICTION_UNAVAILABLE };
+  }
+}
+
 export function toJournalEntry(
   move: number,
   response: JevShotResponse,
@@ -220,15 +350,25 @@ export function toJournalEntry(
   };
 }
 
-export function buildStateFromView(playerView: OpponentView): string {
+export function buildStateFromView(
+  playerView: OpponentView,
+  history?: PlayerShotHistoryBundle,
+): string {
   const grid = playerView.cells.map((row) => row.map((c) => c as string));
-  return formatBoardState(grid, playerView.sunkShipLengths);
+  const board = formatBoardState(grid, playerView.sunkShipLengths);
+  if (!history) return board;
+  return `${board}\n\n${formatPlayerShotHistoryForState(history.thisMatch, history.recent)}`;
 }
+
+export type SystemOneAnswers = {
+  shot?: ChoiceAnswer;
+  playerNextShot?: ChoiceAnswer;
+};
 
 export async function callTypeSafeJev(
   apiKey: string,
   request: JevShotRequest,
-): Promise<ChoiceAnswer> {
+): Promise<SystemOneAnswers> {
   const body = buildSystemOneBody(request);
 
   const res = await fetch("https://api.typesafe.ai/v1/systemone", {
@@ -248,9 +388,9 @@ export async function callTypeSafeJev(
   }
 
   const data = (await res.json()) as {
-    answers: { shot: ChoiceAnswer };
+    answers: SystemOneAnswers;
   };
-  return data.answers.shot;
+  return data.answers ?? {};
 }
 
 export async function chooseJevShot(
@@ -259,12 +399,54 @@ export async function chooseJevShot(
 ): Promise<JevShotResponse> {
   const start = performance.now();
   if (!apiKey) {
-    return fallbackShot(request, start);
+    return attachPrediction(
+      fallbackShot(request, start),
+      null,
+      PREDICTION_UNAVAILABLE,
+    );
   }
   try {
-    const answer = await callTypeSafeJev(apiKey, request);
-    return parseJevResponse(request, answer, start);
+    const answers = await callTypeSafeJev(apiKey, request);
+    const shot = answers.shot
+      ? parseJevResponse(request, answers.shot, start)
+      : fallbackShot(request, start);
+    const { prediction, predictionError } = predictionFromTargets(
+      request.playerLegalTargets,
+      answers.playerNextShot,
+    );
+    return attachPrediction(shot, prediction, predictionError);
   } catch {
-    return fallbackShot(request, start);
+    return attachPrediction(
+      fallbackShot(request, start),
+      null,
+      PREDICTION_UNAVAILABLE,
+    );
+  }
+}
+
+export type PlayerNextShotResponse = {
+  prediction: PlayerShotPrediction | null;
+  predictionError?: string | null;
+};
+
+export async function choosePlayerNextShot(
+  apiKey: string | undefined,
+  request: JevShotRequest,
+): Promise<PlayerNextShotResponse> {
+  const targets = request.playerLegalTargets ?? [];
+  if (targets.length <= 1) {
+    return predictionFromTargets(targets, undefined);
+  }
+  if (!apiKey) {
+    return { prediction: null, predictionError: PREDICTION_UNAVAILABLE };
+  }
+  try {
+    const answers = await callTypeSafeJev(apiKey, {
+      ...request,
+      legalMoves: [],
+    });
+    return predictionFromTargets(targets, answers.playerNextShot);
+  } catch {
+    return { prediction: null, predictionError: PREDICTION_UNAVAILABLE };
   }
 }
