@@ -7,6 +7,7 @@ import {
   listValidPlacements,
   placeShip,
   randomFleetPlacement,
+  shipAtCell,
   validatePlacement,
 } from "./placement";
 import {
@@ -16,6 +17,13 @@ import {
   legalMoves,
 } from "./shooting";
 import type { ShipPlacement } from "./types";
+import {
+  autoPlacePlayerFleet,
+  createNewGame,
+  createPlayerAttackView,
+  jevShoot,
+  playerShoot,
+} from "./session";
 
 describe("placement", () => {
   it("accepts a valid horizontal ship", () => {
@@ -155,5 +163,68 @@ describe("shooting", () => {
   it("starts with full board legal moves", () => {
     const view = createOpponentView();
     assert.equal(legalMoves(view).length, BOARD_SIZE * BOARD_SIZE);
+  });
+});
+
+describe("session turns", () => {
+  it("player miss hands the turn to Jev; Jev HIT/SUNK keeps Jev's turn", () => {
+    let { state } = { state: autoPlacePlayerFleet(createNewGame()) };
+    const miss = (() => {
+      for (let row = 0; row < BOARD_SIZE; row++) {
+        for (let col = 0; col < BOARD_SIZE; col++) {
+          if (!shipAtCell(state.jevBoard, row, col)) return { row, col };
+        }
+      }
+      throw new Error("expected a miss cell on Jev's fleet");
+    })();
+    const playerMiss = playerShoot(state, miss.row, miss.col);
+    assert.equal(playerMiss.result.outcome, "miss");
+    assert.equal(playerMiss.state.turn, "jev");
+    state = playerMiss.state;
+
+    const view = createPlayerAttackView();
+    const hitCell = state.playerBoard.ships[0]!.cells[0]!;
+    const jevHit = jevShoot(state, hitCell.row, hitCell.col, view);
+    assert.ok(jevHit.result.outcome === "hit" || jevHit.result.outcome === "sunk");
+    if (jevHit.state.phase === "playing") {
+      assert.equal(jevHit.state.turn, "jev");
+    }
+
+    const missOnPlayer = (() => {
+      for (let row = 0; row < BOARD_SIZE; row++) {
+        for (let col = 0; col < BOARD_SIZE; col++) {
+          if (
+            !shipAtCell(jevHit.state.playerBoard, row, col) &&
+            jevHit.playerView.cells[row][col] === "unknown"
+          ) {
+            return { row, col };
+          }
+        }
+      }
+      throw new Error("expected a miss cell on the player fleet");
+    })();
+    const jevMiss = jevShoot(
+      jevHit.state,
+      missOnPlayer.row,
+      missOnPlayer.col,
+      jevHit.playerView,
+    );
+    assert.equal(jevMiss.result.outcome, "miss");
+    assert.equal(jevMiss.state.turn, "player");
+  });
+
+  it("rejects Jev shots when no legal moves remain", () => {
+    const state = autoPlacePlayerFleet(createNewGame());
+    const view = createOpponentView();
+    for (let row = 0; row < BOARD_SIZE; row++) {
+      for (let col = 0; col < BOARD_SIZE; col++) {
+        view.cells[row][col] = "miss";
+      }
+    }
+    assert.equal(legalMoves(view).length, 0);
+    assert.throws(
+      () => jevShoot({ ...state, turn: "jev", phase: "playing" }, 0, 0, view),
+      /not a legal move/i,
+    );
   });
 });

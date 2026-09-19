@@ -2,6 +2,8 @@
 
 import { useState } from "react";
 import type { JournalEntry } from "@/lib/game/journal";
+import { chosenShotPercent, coordEquals } from "@/lib/game/journal";
+
 type MoveJournalProps = {
   entries: JournalEntry[];
   thinking?: boolean;
@@ -17,6 +19,10 @@ export function MoveJournal({
 }: MoveJournalProps) {
   const [expanded, setExpanded] = useState(false);
   const latest = entries[entries.length - 1];
+  const chosenPercent = latest
+    ? (latest.chosenPercent ??
+      chosenShotPercent(latest.chosen, latest.probabilities))
+    : 0;
 
   return (
     <aside className="flex flex-col gap-4 rounded-2xl bg-white/60 p-5 shadow-sm ring-1 ring-[#c8d4c0]/40">
@@ -48,12 +54,14 @@ export function MoveJournal({
         <div className="space-y-3">
           <p className="text-sm text-[#5c4a3a]/80">
             Move {latest.move} · {latest.ms} ms
+            {latest.source === "fallback" ? " · heuristic fallback" : ""}
           </p>
           <p className="text-base font-medium text-[#2c1810]">
             <span className="text-[#4a9d93]">◎</span> {latest.label} it is.
           </p>
           <p className="text-sm text-[#5c4a3a]/70">
-            A pick from Jev&apos;s probabilities.
+            {chosenPercent.toFixed(1)}% shot preference
+            {latest.source === "jev" ? " from Jev" : ""}.
           </p>
 
           <div className="space-y-2">
@@ -61,20 +69,28 @@ export function MoveJournal({
               Jev&apos;s shot preferences
             </p>
             {(expanded ? latest.probabilities : latest.probabilities.slice(0, 3)).map(
-              (p) => (
-                <div key={`${p.cell.row}-${p.cell.col}`} className="space-y-1">
-                  <div className="flex justify-between text-xs text-[#5c4a3a]/80">
-                    <span>{p.label}</span>
-                    <span>{p.percent.toFixed(1)}%</span>
+              (p) => {
+                const isChosen = coordEquals(p.cell, latest.chosen);
+                return (
+                  <div key={`${p.cell.row}-${p.cell.col}`} className="space-y-1">
+                    <div className="flex justify-between text-xs text-[#5c4a3a]/80">
+                      <span className={isChosen ? "font-semibold text-[#2c1810]" : undefined}>
+                        {p.label}
+                        {isChosen ? " · chosen" : ""}
+                      </span>
+                      <span className={isChosen ? "font-semibold text-[#2c1810]" : undefined}>
+                        {p.percent.toFixed(1)}%
+                      </span>
+                    </div>
+                    <div className="h-1.5 overflow-hidden rounded-full bg-[#e8e4d8]">
+                      <div
+                        className="h-full rounded-full bg-[#4a9d93]"
+                        style={{ width: `${Math.min(100, p.percent)}%` }}
+                      />
+                    </div>
                   </div>
-                  <div className="h-1.5 overflow-hidden rounded-full bg-[#e8e4d8]">
-                    <div
-                      className="h-full rounded-full bg-[#4a9d93]"
-                      style={{ width: `${Math.min(100, p.percent)}%` }}
-                    />
-                  </div>
-                </div>
-              ),
+                );
+              },
             )}
             {latest.probabilities.length > 3 && (
               <button
@@ -88,9 +104,15 @@ export function MoveJournal({
               </button>
             )}
             <p className="text-xs text-[#5c4a3a]/60">
-              Jev favored {latest.label} · {(latest.confidence * 100).toFixed(0)}%
-              confidence
+              Jev favored {latest.label} · {chosenPercent.toFixed(1)}%
             </p>
+            {latest.confidence != null && (
+              <p className="text-xs text-[#5c4a3a]/50">
+                Model confidence {(latest.confidence * 100).toFixed(0)}% — how
+                peaked the distribution is, not {latest.label}&apos;s cell
+                probability.
+              </p>
+            )}
           </div>
         </div>
       )}
@@ -102,7 +124,9 @@ export function MoveJournal({
         <p className="mt-2">
           Jev scores each remaining legal cell as a shot preference. This is a
           decision log, not written thoughts. Percentages show where Jev prefers
-          to fire, not the chance of hitting a ship or winning the match.
+          to fire, not the chance of hitting a ship or winning the match. If a
+          model-confidence figure appears, that is how peaked the distribution
+          is — not the percentage on the chosen cell&apos;s bar.
         </p>
       </details>
     </aside>
