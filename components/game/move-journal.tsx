@@ -100,10 +100,9 @@ export function MoveJournal({
           What am I looking at?
         </summary>
         <p className="mt-2">
-          Jev scores each available cell. We sample those probabilities, with
-          simple checks for immediate wins and blocks. This is a decision log,
-          not written thoughts. Percentages are shot preferences, not odds of
-          winning.
+          Jev scores each remaining legal cell as a shot preference. This is a
+          decision log, not written thoughts. Percentages show where Jev prefers
+          to fire, not the chance of hitting a ship or winning the match.
         </p>
       </details>
     </aside>
