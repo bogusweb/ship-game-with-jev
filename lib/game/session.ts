@@ -98,12 +98,17 @@ export function playerShoot(
     phase = "won";
   }
 
+  let turn: GameState["turn"] = "player";
+  if (phase === "playing") {
+    turn = result.outcome === "miss" ? "jev" : "player";
+  }
+
   const next: GameState = {
     ...state,
     jevBoard: board,
     opponentView: view,
     phase,
-    turn: allShipsSunk(board) ? "player" : "jev",
+    turn,
     moveCount: state.moveCount + 1,
   };
 
@@ -138,11 +143,16 @@ export function jevShoot(
     phase = "lost";
   }
 
+  let turn: GameState["turn"] = "jev";
+  if (phase === "playing") {
+    turn = result.outcome === "miss" ? "player" : "jev";
+  }
+
   const next: GameState = {
     ...state,
     playerBoard: board,
     phase,
-    turn: allShipsSunk(board) ? "jev" : "player",
+    turn,
     moveCount: state.moveCount + 1,
   };
 
