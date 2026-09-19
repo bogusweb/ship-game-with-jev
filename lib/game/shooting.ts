@@ -121,6 +121,14 @@ export function allShipsSunk(board: PlayerBoard): boolean {
   return board.ships.length > 0 && board.ships.every((s) => s.sunk);
 }
 
+/** Remaining afloat ship lengths from real board state, longest first. */
+export function unsunkShipLengths(board: PlayerBoard): number[] {
+  return board.ships
+    .filter((ship) => !ship.sunk)
+    .map((ship) => ship.length)
+    .sort((a, b) => b - a);
+}
+
 export function shotHeatMap(view: OpponentView): boolean[][] {
   return view.cells.map((row) => row.map((cell) => cell === "unknown"));
 }
