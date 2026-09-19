@@ -19,15 +19,25 @@ import {
   validatePlacement,
 } from "@/lib/game";
 import type { GameState, OpponentView, Orientation, ShotCellState } from "@/lib/game";
-import { buildMockJournalEntry, type JournalEntry } from "@/lib/game/journal";
+import type { JournalEntry } from "@/lib/game/journal";
+import { toJournalEntry, type JevShotRequest } from "@/lib/jev/shot";
 import { shipAtCell } from "@/lib/game/placement";
 import type { CellVisual } from "./board-cell";
 import { GameBoard } from "./game-board";
 import { MoveJournal } from "./move-journal";
 import { ThinkingIndicator } from "./thinking-indicator";
 
-function mockJevPick(moves: { row: number; col: number }[]) {
-  return moves[Math.floor(Math.random() * moves.length)];
+async function fetchJevShot(request: JevShotRequest) {
+  const res = await fetch("/api/jev/shot", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(request),
+  });
+  if (!res.ok) {
+    const data = await res.json().catch(() => ({}));
+    throw new Error(data.error ?? `Jev API failed (${res.status})`);
+  }
+  return res.json();
 }
 
 export function GameShell() {
@@ -127,12 +137,16 @@ export function GameShell() {
       setJevError(null);
 
       try {
-        await new Promise((r) => setTimeout(r, 600 + Math.random() * 400));
         const moves = legalMoves(view);
         if (moves.length === 0) throw new Error("No legal moves for Jev");
 
-        const chosen = mockJevPick(moves);
-        const entry = buildMockJournalEntry(state.moveCount + 1, chosen, moves);
+        const jevResponse = await fetchJevShot({
+          move: state.moveCount + 1,
+          legalMoves: moves,
+          playerView: view,
+        });
+        const chosen = jevResponse.chosen;
+        const entry = toJournalEntry(state.moveCount + 1, jevResponse);
         setJournal((prev) => [...prev, entry]);
 
         const outcome = jevShoot(state, chosen.row, chosen.col, view);
@@ -262,7 +276,9 @@ export function GameShell() {
 
         <div className="grid gap-8 lg:grid-cols-[1fr_320px]">
           <div className="grid gap-8 md:grid-cols-2">
-            <div onMouseLeave={() => setHoverCell(null)}>
+            <div
+              onMouseLeave={() => setHoverCell(null)}
+            >
               <GameBoard
                 title="Your fleet"
                 subtitle={
