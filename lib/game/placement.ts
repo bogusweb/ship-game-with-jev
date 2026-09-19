@@ -89,7 +89,7 @@ export function allFleetPlaced(board: PlayerBoard): boolean {
 
 export function remainingFleetLengths(board: PlayerBoard): number[] {
   const placed = board.ships.map((s) => s.length);
-  const remaining = [...FLEET_LENGTHS];
+  const remaining: number[] = [...FLEET_LENGTHS];
   for (const length of placed) {
     const idx = remaining.indexOf(length);
     if (idx >= 0) {
