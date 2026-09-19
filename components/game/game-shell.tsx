@@ -16,6 +16,7 @@ import {
   nextShipLength,
   placePlayerShip,
   playerShoot,
+  unsunkShipLengths,
   validatePlacement,
 } from "@/lib/game";
 import type { GameState, OpponentView, Orientation, ShotCellState } from "@/lib/game";
@@ -25,7 +26,7 @@ import { shipAtCell } from "@/lib/game/placement";
 import type { CellVisual } from "./board-cell";
 import { GameBoard } from "./game-board";
 import { MoveJournal } from "./move-journal";
-import { ThinkingIndicator } from "./thinking-indicator";
+import { TurnIndicator, turnKindFromState } from "./turn-indicator";
 
 async function fetchJevShot(request: JevShotRequest) {
   const res = await fetch("/api/jev/shot", {
@@ -50,7 +51,7 @@ export function GameShell() {
     null,
   );
   const [journal, setJournal] = useState<JournalEntry[]>([]);
-  const [jevThinking, setJevThinking] = useState(false);
+  const [isJevThinking, setIsJevThinking] = useState(false);
   const [jevError, setJevError] = useState<string | null>(null);
   const [status, setStatus] = useState<string>("Place your fleet on the left board.");
 
@@ -133,7 +134,7 @@ export function GameShell() {
 
   const runJevTurn = useCallback(
     async (state: GameState, view: OpponentView) => {
-      setJevThinking(true);
+      setIsJevThinking(true);
       setJevError(null);
 
       let currentState = state;
@@ -185,14 +186,14 @@ export function GameShell() {
       } catch (e) {
         setJevError(e instanceof Error ? e.message : "Jev could not choose a shot");
       } finally {
-        setJevThinking(false);
+        setIsJevThinking(false);
       }
     },
     [],
   );
 
   const handleFire = (row: number, col: number) => {
-    if (game.phase !== "playing" || game.turn !== "player" || jevThinking) return;
+    if (game.phase !== "playing" || game.turn !== "player" || isJevThinking) return;
     try {
       const { state, result } = playerShoot(game, row, col);
       setGame(state);
@@ -223,6 +224,7 @@ export function GameShell() {
     setPlayerView(createPlayerAttackView());
     setJournal([]);
     setJevError(null);
+    setIsJevThinking(false);
     setStatus("Place your fleet on the left board.");
   };
 
@@ -245,6 +247,13 @@ export function GameShell() {
   }, [game.phase, currentShipLength, placedCount]);
 
   const gameOver = game.phase === "won" || game.phase === "lost";
+  const turnKind = turnKindFromState({
+    phase: game.phase,
+    turn: game.turn,
+    isJevThinking,
+  });
+  const playerRemaining = unsunkShipLengths(game.playerBoard);
+  const jevRemaining = unsunkShipLengths(game.jevBoard);
 
   return (
     <div className="min-h-full bg-[#fefce4] px-4 py-8 sm:px-6">
@@ -260,16 +269,7 @@ export function GameShell() {
           </p>
         </header>
 
-        <div className="flex flex-wrap items-center gap-3">
-          <span className="rounded-full bg-[#dc6b5e] px-3 py-1 text-sm font-medium text-white">
-            You
-          </span>
-          <span className="text-[#5c4a3a]/60">vs.</span>
-          <span className="rounded-full bg-[#4a9d93] px-3 py-1 text-sm font-medium text-white">
-            Jev
-          </span>
-          <ThinkingIndicator visible={jevThinking} />
-        </div>
+        <TurnIndicator kind={turnKind} />
 
         <p className="text-sm text-[#5c4a3a]/80">{status}</p>
 
@@ -306,6 +306,8 @@ export function GameShell() {
                 }
                 getCellVisual={playerBoardVisual}
                 showShips
+                remainingLengths={playerRemaining}
+                remainingAccent="player"
                 onCellClick={
                   game.phase === "placement" ? handlePlaceClick : undefined
                 }
@@ -330,11 +332,14 @@ export function GameShell() {
                     : undefined
               }
               getCellVisual={jevBoardVisual}
+              remainingLengths={jevRemaining}
+              remainingAccent="jev"
+              isJevThinking={isJevThinking}
               onCellClick={handleFire}
               canClick={(row, col) =>
                 game.phase === "playing" &&
                 game.turn === "player" &&
-                !jevThinking &&
+                !isJevThinking &&
                 game.opponentView.cells[row][col] === "unknown"
               }
             />
@@ -342,7 +347,7 @@ export function GameShell() {
 
           <MoveJournal
             entries={journal}
-            thinking={jevThinking}
+            thinking={isJevThinking}
             error={jevError}
           />
         </div>
