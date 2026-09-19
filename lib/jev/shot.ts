@@ -8,10 +8,14 @@ import {
   type ShotPreference,
 } from "@/lib/game/journal";
 import {
+  describeShotCriterion,
+  scoreLegalShots,
+} from "@/lib/game/heatmap";
+import {
   formatPlayerShotHistoryForState,
   type PlayerShotHistoryBundle,
 } from "@/lib/game/player-shot-history";
-import { formatBoardState } from "./tactics";
+import { formatBoardState, SHOT_CHOICE_INSTRUCTIONS } from "./tactics";
 
 export const JEV_MODEL = "jev-latest";
 export const MAX_CHOICE_CRITERIA = 255;
@@ -111,17 +115,22 @@ export function capChoiceCoords(
   return cells.slice(0, max);
 }
 
-export function buildJevQuestions(legalMoves: Coord[]) {
+export function buildJevQuestions(
+  legalMoves: Coord[],
+  playerView: OpponentView,
+) {
+  const scores = scoreLegalShots(playerView, legalMoves).slice(
+    0,
+    MAX_CHOICE_CRITERIA,
+  );
   const criteria: Record<string, string> = {};
-  for (const cell of legalMoves) {
-    const key = coordToKey(cell);
-    criteria[key] = `Fire at ${key}`;
+  for (const score of scores) {
+    criteria[score.label] = describeShotCriterion(score);
   }
   return {
     shot: {
       type: "choice" as const,
-      instructions:
-        "Pick the best cell to fire at given the board state and tactics.",
+      instructions: SHOT_CHOICE_INSTRUCTIONS,
       criteria,
     },
   };
@@ -147,8 +156,11 @@ export function buildPlayerNextShotQuestion(
 
 export function buildSystemOneBody(request: JevShotRequest): SystemOneRequestBody {
   const questions: SystemOneRequestBody["questions"] = {};
-  if (request.legalMoves?.length) {
-    questions.shot = buildJevQuestions(request.legalMoves).shot;
+  if ((request.legalMoves?.length ?? 0) >= 2) {
+    questions.shot = buildJevQuestions(
+      request.legalMoves,
+      request.playerView,
+    ).shot;
   }
   const playerNextShot = request.playerLegalTargets
     ? buildPlayerNextShotQuestion(request.playerLegalTargets)
@@ -199,39 +211,15 @@ export function fallbackShot(
   startMs: number,
 ): JevShotResponse {
   const { legalMoves, playerView } = request;
-  const hits: Coord[] = [];
-  for (let r = 0; r < 10; r++) {
-    for (let c = 0; c < 10; c++) {
-      if (playerView.cells[r][c] === "hit") hits.push({ row: r, col: c });
-    }
-  }
-
-  const weights = new Map<string, number>();
-  for (const cell of legalMoves) {
-    const key = coordToKey(cell);
-    let w = 1;
-    if (hits.length > 0) {
-      for (const h of hits) {
-        const dist = Math.abs(h.row - cell.row) + Math.abs(h.col - cell.col);
-        if (dist === 1) w += 4;
-        if (dist === 2) w += 1;
-      }
-    } else {
-      if ((cell.row + cell.col) % 2 === 0) w += 1.5;
-      const center = Math.abs(cell.row - 4.5) + Math.abs(cell.col - 4.5);
-      w += Math.max(0, 6 - center) * 0.2;
-    }
-    weights.set(key, w);
-  }
-
-  const legalKeys = legalMoves.map(coordToKey);
+  const scores = scoreLegalShots(playerView, legalMoves);
+  const legalKeys = scores.map((s) => s.label);
   const probMap: Record<string, number> = {};
-  const total = legalKeys.reduce((s, k) => s + (weights.get(k) ?? 1), 0);
-  for (const k of legalKeys) {
-    probMap[k] = ((weights.get(k) ?? 1) / total) * 100;
+  const total = scores.reduce((sum, s) => sum + Math.max(1, s.heat), 0);
+  for (const score of scores) {
+    probMap[score.label] = (Math.max(1, score.heat) / total) * 100;
   }
 
-  const chosenKey = sampleChoice(probMap, legalKeys);
+  const chosenKey = legalKeys[0] ?? coordToKey(legalMoves[0]!);
   return finishResponse(
     chosenKey,
     preferencesFromMap(legalKeys, probMap),
@@ -398,6 +386,13 @@ export async function chooseJevShot(
   request: JevShotRequest,
 ): Promise<JevShotResponse> {
   const start = performance.now();
+  if (request.legalMoves.length === 1) {
+    return attachPrediction(
+      fallbackShot(request, start),
+      null,
+      request.playerLegalTargets?.length ? PREDICTION_UNAVAILABLE : null,
+    );
+  }
   if (!apiKey) {
     return attachPrediction(
       fallbackShot(request, start),
