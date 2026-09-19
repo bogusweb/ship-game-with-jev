@@ -1,7 +1,15 @@
 import { cellLabel } from "@/lib/game/coords";
 import type { Coord, OpponentView } from "@/lib/game/types";
-import type { JournalEntry } from "@/lib/game/journal";
+import {
+  asShotPercent,
+  chosenShotPercent,
+  rankShotPreferences,
+  type JournalEntry,
+  type ShotPreference,
+} from "@/lib/game/journal";
 import { formatBoardState } from "./tactics";
+
+export const JEV_MODEL = "jev-latest";
 
 export type JevShotRequest = {
   move: number;
@@ -12,16 +20,30 @@ export type JevShotRequest = {
 export type JevShotResponse = {
   chosen: Coord;
   label: string;
-  probabilities: { cell: Coord; label: string; percent: number }[];
-  confidence: number;
+  probabilities: ShotPreference[];
+  chosenPercent: number;
+  /** TypeSafe model confidence 0–1 when the API provided it. Not a cell probability. */
+  confidence?: number;
   ms: number;
   source: "jev" | "fallback";
 };
 
-type ChoiceAnswer = {
+export type ChoiceAnswer = {
   choice: string;
   probabilities: Record<string, number>;
   confidence?: number;
+};
+
+export type SystemOneRequestBody = {
+  model: string;
+  state: string;
+  questions: {
+    shot: {
+      type: "choice";
+      instructions: string;
+      criteria: Record<string, string>;
+    };
+  };
 };
 
 function coordToKey(cell: Coord): string {
@@ -34,6 +56,14 @@ function keyToCoord(key: string): Coord {
   return { row, col };
 }
 
+export function asModelConfidence(value: unknown): number | undefined {
+  if (typeof value !== "number" || !Number.isFinite(value) || value < 0) {
+    return undefined;
+  }
+  const unit = value > 1 ? value / 100 : value;
+  return Math.min(1, unit);
+}
+
 export function sampleChoice(
   probabilities: Record<string, number>,
   legalKeys: string[],
@@ -44,14 +74,69 @@ export function sampleChoice(
   }));
   const total = entries.reduce((s, e) => s + e.weight, 0);
   if (total <= 0) {
-    return legalKeys[Math.floor(Math.random() * legalKeys.length)];
+    return legalKeys[Math.floor(Math.random() * legalKeys.length)]!;
   }
   let r = Math.random() * total;
   for (const e of entries) {
     r -= e.weight;
     if (r <= 0) return e.key;
   }
-  return entries[entries.length - 1].key;
+  return entries[entries.length - 1]!.key;
+}
+
+export function buildJevQuestions(legalMoves: Coord[]) {
+  const criteria: Record<string, string> = {};
+  for (const cell of legalMoves) {
+    const key = coordToKey(cell);
+    criteria[key] = `Fire at ${key}`;
+  }
+  return {
+    shot: {
+      type: "choice" as const,
+      instructions:
+        "Pick the best cell to fire at given the board state and tactics.",
+      criteria,
+    },
+  };
+}
+
+export function buildSystemOneBody(request: JevShotRequest): SystemOneRequestBody {
+  return {
+    model: JEV_MODEL,
+    state: buildStateFromView(request.playerView),
+    questions: buildJevQuestions(request.legalMoves),
+  };
+}
+
+function preferencesFromMap(
+  legalKeys: string[],
+  probabilities: Record<string, number>,
+): ShotPreference[] {
+  return legalKeys.map((k) => ({
+    cell: keyToCoord(k),
+    label: k,
+    percent: asShotPercent(probabilities[k] ?? 0),
+  }));
+}
+
+function finishResponse(
+  chosenKey: string,
+  preferences: ShotPreference[],
+  startMs: number,
+  source: JevShotResponse["source"],
+  confidence?: number,
+): JevShotResponse {
+  const chosen = keyToCoord(chosenKey);
+  const ranked = rankShotPreferences(chosen, preferences);
+  return {
+    chosen,
+    label: chosenKey,
+    probabilities: ranked,
+    chosenPercent: chosenShotPercent(chosen, preferences),
+    confidence,
+    ms: Math.round(performance.now() - startMs),
+    source,
+  };
 }
 
 export function fallbackShot(
@@ -92,40 +177,12 @@ export function fallbackShot(
   }
 
   const chosenKey = sampleChoice(probMap, legalKeys);
-  const chosen = keyToCoord(chosenKey);
-  const sorted = legalKeys
-    .map((k) => ({
-      cell: keyToCoord(k),
-      label: k,
-      percent: probMap[k],
-    }))
-    .sort((a, b) => b.percent - a.percent);
-
-  const chosenProb = probMap[chosenKey] ?? 0;
-  return {
-    chosen,
-    label: chosenKey,
-    probabilities: sorted.slice(0, 8),
-    confidence: Math.min(0.99, chosenProb / 100 + 0.05),
-    ms: Math.round(performance.now() - startMs),
-    source: "fallback",
-  };
-}
-
-export function buildJevQuestions(legalMoves: Coord[]) {
-  const options: Record<string, string> = {};
-  for (const cell of legalMoves) {
-    const key = coordToKey(cell);
-    options[key] = `Fire at ${key}`;
-  }
-  return {
-    shot: {
-      type: "choice" as const,
-      instructions:
-        "Pick the best cell to fire at given the board state and tactics.",
-      options,
-    },
-  };
+  return finishResponse(
+    chosenKey,
+    preferencesFromMap(legalKeys, probMap),
+    startMs,
+    "fallback",
+  );
 }
 
 export function parseJevResponse(
@@ -138,28 +195,13 @@ export function parseJevResponse(
     ? answer.choice
     : sampleChoice(answer.probabilities, legalKeys);
 
-  const chosen = keyToCoord(chosenKey);
-  const probabilities = legalKeys
-    .map((k) => ({
-      cell: keyToCoord(k),
-      label: k,
-      percent:
-        (answer.probabilities[k] ?? 0) *
-        (answer.probabilities[k] <= 1 ? 100 : 1),
-    }))
-    .sort((a, b) => b.percent - a.percent);
-
-  const chosenProb =
-    probabilities.find((p) => p.label === chosenKey)?.percent ?? 0;
-
-  return {
-    chosen,
-    label: chosenKey,
-    probabilities: probabilities.slice(0, 8),
-    confidence: answer.confidence ?? Math.min(0.99, chosenProb / 100 + 0.05),
-    ms: Math.round(performance.now() - startMs),
-    source: "jev",
-  };
+  return finishResponse(
+    chosenKey,
+    preferencesFromMap(legalKeys, answer.probabilities),
+    startMs,
+    "jev",
+    asModelConfidence(answer.confidence),
+  );
 }
 
 export function toJournalEntry(
@@ -172,7 +214,9 @@ export function toJournalEntry(
     chosen: response.chosen,
     label: response.label,
     probabilities: response.probabilities,
+    chosenPercent: response.chosenPercent,
     confidence: response.confidence,
+    source: response.source,
   };
 }
 
@@ -185,8 +229,7 @@ export async function callTypeSafeJev(
   apiKey: string,
   request: JevShotRequest,
 ): Promise<ChoiceAnswer> {
-  const state = buildStateFromView(request.playerView);
-  const questions = buildJevQuestions(request.legalMoves);
+  const body = buildSystemOneBody(request);
 
   const res = await fetch("https://api.typesafe.ai/v1/systemone", {
     method: "POST",
@@ -194,11 +237,14 @@ export async function callTypeSafeJev(
       Authorization: `Bearer ${apiKey}`,
       "Content-Type": "application/json",
     },
-    body: JSON.stringify({ state, questions }),
+    body: JSON.stringify(body),
   });
 
   if (!res.ok) {
-    throw new Error(`Jev API error: ${res.status}`);
+    const detail = await res.text().catch(() => "");
+    throw new Error(
+      `Jev API error: ${res.status}${detail ? ` ${detail.slice(0, 240)}` : ""}`,
+    );
   }
 
   const data = (await res.json()) as {
