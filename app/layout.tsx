@@ -15,7 +15,7 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: "Ship Game with Jev",
   description:
-    "Play Battleship against Jev — a browser proof of concept inspired by Jev Tac Toe.",
+    "Play Battleship against Jev — a browser proof of concept.",
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
