@@ -41,7 +41,8 @@
     padding-right: 24px;
   }
   .night .workspace {
-    grid-template-columns: 246px 1fr;
+    /* Prototype tightens 296→246 here. Keep Paweł’s 550px column. */
+    grid-template-columns: var(--sj-layout-column) 1fr;
     gap: 23px;
   }
   .night .theater .board-art {
@@ -112,7 +113,7 @@
     gap: 20px;
   }
   .night .setup-workspace {
-    grid-template-columns: 265px 1fr;
+    grid-template-columns: var(--sj-layout-column) 1fr;
     gap: 22px;
   }
   .night .placement-map-header {
