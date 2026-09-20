@@ -48,4 +48,8 @@ export type GameState = {
   jevBoard: PlayerBoard;
   turn: "player" | "jev";
   moveCount: number;
+  /** Latest player fire on Jev's waters; null before the first shot. */
+  lastPlayerShot: Coord | null;
+  /** Latest Jev fire on the player's fleet; null before the first shot. */
+  lastJevShot: Coord | null;
 };
