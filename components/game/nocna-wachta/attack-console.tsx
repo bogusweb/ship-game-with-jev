@@ -9,6 +9,8 @@ export type AttackConsoleProps = {
   selected: Coord | null;
   phase: "placement" | "playing" | "won" | "lost";
   jevThinking: boolean;
+  fireOnClick: boolean;
+  onFireOnClickChange: (value: boolean) => void;
   onFire: () => void;
 };
 
@@ -16,6 +18,8 @@ export function AttackConsole({
   selected,
   phase,
   jevThinking,
+  fireOnClick,
+  onFireOnClickChange,
   onFire,
 }: AttackConsoleProps) {
   const { t } = useLocale();
@@ -30,7 +34,9 @@ export function AttackConsole({
         ? t("attack.placeFleetFirst")
         : selected
           ? t("attack.targetLocked")
-          : t("attack.pickFirst");
+          : fireOnClick
+            ? t("attack.clickToFire")
+            : t("attack.pickFirst");
 
   const detail = complete
     ? t("attack.startAnother")
@@ -38,7 +44,9 @@ export function AttackConsole({
       ? t("attack.soonYourTurn")
       : placement
         ? t("attack.deployToBegin")
-        : t("attack.clickToChange");
+        : fireOnClick
+          ? t("attack.clickToFireDetail")
+          : t("attack.clickToChange");
 
   const disabled = complete || placement || jevThinking || !selected;
 
@@ -55,6 +63,14 @@ export function AttackConsole({
         </div>
       </div>
       <div className="attack-actions">
+        <label className="fire-click-toggle">
+          <input
+            type="checkbox"
+            checked={fireOnClick}
+            onChange={(event) => onFireOnClickChange(event.target.checked)}
+          />
+          {t("attack.fireOnClick")}
+        </label>
         <button
           type="button"
           className="primary"
