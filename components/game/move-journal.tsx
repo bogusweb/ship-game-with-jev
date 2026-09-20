@@ -1,37 +1,58 @@
 "use client";
 
-import { useState } from "react";
-import type { JournalEntry } from "@/lib/game/journal";
+import { useEffect, useState } from "react";
 import { chosenShotPercent, coordEquals } from "@/lib/game/journal";
+import {
+  newestFirst,
+  type MatchHistoryItem,
+} from "@/lib/game/match-history";
+import { cn } from "@/lib/utils";
 
 type MoveJournalProps = {
-  entries: JournalEntry[];
+  history: MatchHistoryItem[];
   thinking?: boolean;
   error?: string | null;
   emptyMessage?: string;
 };
 
 export function MoveJournal({
-  entries,
+  history,
   thinking,
   error,
-  emptyMessage = "Place your fleet to begin. Jev will share shot preferences here.",
+  emptyMessage = "Place your fleet to begin. Shots will land here, newest on the left.",
 }: MoveJournalProps) {
-  const [expanded, setExpanded] = useState(false);
-  const latest = entries[entries.length - 1];
+  const ordered = newestFirst(history);
+  const [selectedId, setSelectedId] = useState<string | null>(
+    ordered[0]?.id ?? null,
+  );
+  const selected =
+    ordered.find((item) => item.id === selectedId) ?? ordered[0] ?? null;
+  const latest = selected?.journal;
   const chosenPercent = latest
     ? (latest.chosenPercent ??
       chosenShotPercent(latest.chosen, latest.probabilities))
     : 0;
+  const [expanded, setExpanded] = useState(false);
+
+  const newestId = ordered[0]?.id;
+
+  useEffect(() => {
+    if (newestId) {
+      setSelectedId(newestId);
+      setExpanded(false);
+    }
+  }, [newestId]);
 
   return (
-    <aside className="flex flex-col gap-4 rounded-2xl bg-white/60 p-5 shadow-sm ring-1 ring-[#c8d4c0]/40">
+    <aside className="flex w-full min-w-0 flex-col gap-4 rounded-2xl bg-white/60 p-5 shadow-sm ring-1 ring-[#c8d4c0]/40">
       <div>
         <h2 className="flex items-center gap-2 text-lg font-semibold text-[#2c1810]">
           <span className="inline-block h-2.5 w-2.5 rounded-full border border-[#4a9d93]" />
           Jev&apos;s move journal
         </h2>
-        <p className="text-sm text-[#5c4a3a]/70">A peek at the probabilities.</p>
+        <p className="text-sm text-[#5c4a3a]/70">
+          Move history · newest on the left.
+        </p>
       </div>
 
       {error && (
@@ -46,15 +67,73 @@ export function MoveJournal({
         </div>
       )}
 
-      {!thinking && !error && entries.length === 0 && (
+      {!thinking && !error && history.length === 0 && (
         <p className="text-sm text-[#5c4a3a]/70">{emptyMessage}</p>
       )}
 
-      {latest && !thinking && (
+      {ordered.length > 0 && (
+        <div
+          className="flex gap-2 overflow-x-auto pb-1"
+          role="list"
+          aria-label="Move history, newest on the left"
+        >
+          {ordered.map((item) => {
+            const isSelected = selected?.id === item.id;
+            const yours = item.actor === "you";
+            return (
+              <button
+                key={item.id}
+                type="button"
+                role="listitem"
+                onClick={() => setSelectedId(item.id)}
+                aria-pressed={isSelected}
+                className={cn(
+                  "flex min-w-[7.5rem] shrink-0 flex-col gap-0.5 rounded-xl px-3 py-2 text-left ring-1 transition-colors",
+                  yours
+                    ? "bg-[#dc6b5e]/10 ring-[#dc6b5e]/25"
+                    : "bg-[#4a9d93]/10 ring-[#4a9d93]/25",
+                  isSelected &&
+                    (yours
+                      ? "ring-2 ring-[#dc6b5e]"
+                      : "ring-2 ring-[#4a9d93]"),
+                )}
+              >
+                <span className="text-[10px] font-medium uppercase tracking-wide text-[#5c4a3a]/70">
+                  {yours ? "You" : "Jev"}
+                </span>
+                <span className="text-sm font-semibold text-[#2c1810]">
+                  {item.label}
+                </span>
+                <span
+                  className={cn(
+                    "text-xs font-semibold",
+                    item.outcome === "MISS"
+                      ? "text-[#5c4a3a]/80"
+                      : yours
+                        ? "text-[#8b3a30]"
+                        : "text-[#2d6b64]",
+                  )}
+                >
+                  {item.outcome}
+                </span>
+              </button>
+            );
+          })}
+        </div>
+      )}
+
+      {selected && selected.actor === "you" && !thinking && (
+        <p className="text-sm text-[#5c4a3a]/80">
+          You fired {selected.label} — {selected.outcome}.
+        </p>
+      )}
+
+      {latest && selected?.actor === "jev" && !thinking && (
         <div className="space-y-3">
           <p className="text-sm text-[#5c4a3a]/80">
             Move {latest.move} · {latest.ms} ms
             {latest.source === "fallback" ? " · heuristic fallback" : ""}
+            {selected.outcome ? ` · ${selected.outcome}` : ""}
           </p>
           <p className="text-base font-medium text-[#2c1810]">
             <span className="text-[#4a9d93]">◎</span> {latest.label} it is.
@@ -122,11 +201,11 @@ export function MoveJournal({
           What am I looking at?
         </summary>
         <p className="mt-2">
-          Jev scores each remaining legal cell as a shot preference. This is a
-          decision log, not written thoughts. Percentages show where Jev prefers
-          to fire, not the chance of hitting a ship or winning the match. If a
-          model-confidence figure appears, that is how peaked the distribution
-          is — not the percentage on the chosen cell&apos;s bar.
+          Newest shots sit on the left. Your shots and Jev&apos;s shots share
+          this strip. Select a Jev shot to see cell preferences — percentages
+          show where Jev prefers to fire, not the chance of hitting a ship. If
+          a model-confidence figure appears, that is how peaked the
+          distribution is — not the percentage on the chosen cell&apos;s bar.
         </p>
       </details>
     </aside>
