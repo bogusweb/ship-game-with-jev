@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { chosenShotPercent, coordEquals } from "@/lib/game/journal";
 import {
   newestFirst,
@@ -22,9 +22,15 @@ export function MoveJournal({
   emptyMessage = "Place your fleet to begin. Shots will land here, newest on the left.",
 }: MoveJournalProps) {
   const ordered = newestFirst(history);
-  const [selectedId, setSelectedId] = useState<string | null>(
-    ordered[0]?.id ?? null,
-  );
+  const newestId = ordered[0]?.id;
+  const [pinnedId, setPinnedId] = useState<string | null>(null);
+  const [expanded, setExpanded] = useState(false);
+  const selectedId =
+    pinnedId &&
+    pinnedId !== newestId &&
+    ordered.some((item) => item.id === pinnedId)
+      ? pinnedId
+      : newestId;
   const selected =
     ordered.find((item) => item.id === selectedId) ?? ordered[0] ?? null;
   const latest = selected?.journal;
@@ -32,16 +38,6 @@ export function MoveJournal({
     ? (latest.chosenPercent ??
       chosenShotPercent(latest.chosen, latest.probabilities))
     : 0;
-  const [expanded, setExpanded] = useState(false);
-
-  const newestId = ordered[0]?.id;
-
-  useEffect(() => {
-    if (newestId) {
-      setSelectedId(newestId);
-      setExpanded(false);
-    }
-  }, [newestId]);
 
   return (
     <aside className="flex w-full min-w-0 flex-col gap-4 rounded-2xl bg-white/60 p-5 shadow-sm ring-1 ring-[#c8d4c0]/40">
@@ -81,42 +77,45 @@ export function MoveJournal({
             const isSelected = selected?.id === item.id;
             const yours = item.actor === "you";
             return (
-              <button
-                key={item.id}
-                type="button"
-                role="listitem"
-                onClick={() => setSelectedId(item.id)}
-                aria-pressed={isSelected}
-                className={cn(
-                  "flex min-w-[7.5rem] shrink-0 flex-col gap-0.5 rounded-xl px-3 py-2 text-left ring-1 transition-colors",
-                  yours
-                    ? "bg-[#dc6b5e]/10 ring-[#dc6b5e]/25"
-                    : "bg-[#4a9d93]/10 ring-[#4a9d93]/25",
-                  isSelected &&
-                    (yours
-                      ? "ring-2 ring-[#dc6b5e]"
-                      : "ring-2 ring-[#4a9d93]"),
-                )}
-              >
-                <span className="text-[10px] font-medium uppercase tracking-wide text-[#5c4a3a]/70">
-                  {yours ? "You" : "Jev"}
-                </span>
-                <span className="text-sm font-semibold text-[#2c1810]">
-                  {item.label}
-                </span>
-                <span
+              <div key={item.id} role="listitem" className="shrink-0">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setPinnedId(item.id === newestId ? null : item.id);
+                    setExpanded(false);
+                  }}
+                  aria-pressed={isSelected}
                   className={cn(
-                    "text-xs font-semibold",
-                    item.outcome === "MISS"
-                      ? "text-[#5c4a3a]/80"
-                      : yours
-                        ? "text-[#8b3a30]"
-                        : "text-[#2d6b64]",
+                    "flex min-w-[7.5rem] flex-col gap-0.5 rounded-xl px-3 py-2 text-left ring-1 transition-colors",
+                    yours
+                      ? "bg-[#dc6b5e]/10 ring-[#dc6b5e]/25"
+                      : "bg-[#4a9d93]/10 ring-[#4a9d93]/25",
+                    isSelected &&
+                      (yours
+                        ? "ring-2 ring-[#dc6b5e]"
+                        : "ring-2 ring-[#4a9d93]"),
                   )}
                 >
-                  {item.outcome}
-                </span>
-              </button>
+                  <span className="text-[10px] font-medium uppercase tracking-wide text-[#5c4a3a]/70">
+                    {yours ? "You" : "Jev"}
+                  </span>
+                  <span className="text-sm font-semibold text-[#2c1810]">
+                    {item.label}
+                  </span>
+                  <span
+                    className={cn(
+                      "text-xs font-semibold",
+                      item.outcome === "MISS"
+                        ? "text-[#5c4a3a]/80"
+                        : yours
+                          ? "text-[#8b3a30]"
+                          : "text-[#2d6b64]",
+                    )}
+                  >
+                    {item.outcome}
+                  </span>
+                </button>
+              </div>
             );
           })}
         </div>
