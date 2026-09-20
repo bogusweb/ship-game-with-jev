@@ -656,6 +656,12 @@ export function GameShell() {
             }
           />
           <div className="theater-bottom">
+            <FleetStrip
+              lengths={FLEET_LENGTHS}
+              sunkLengths={jevSunkLengths}
+              showCount={false}
+              aria-label={t("battle.sunkCount", { sunk: jevSunkLengths.length })}
+            />
             <span className="small-label">
               {t("battle.sunkCount", { sunk: jevSunkLengths.length })}
             </span>

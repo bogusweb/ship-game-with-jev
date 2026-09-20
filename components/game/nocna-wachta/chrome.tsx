@@ -96,9 +96,13 @@ export function TurnPill({ kind, move }: { kind: TurnPillKind; move: number }) {
 export function FleetStrip({
   lengths,
   sunkLengths,
+  showCount = true,
+  "aria-label": ariaLabel,
 }: {
   lengths: readonly number[];
   sunkLengths: readonly number[];
+  showCount?: boolean;
+  "aria-label"?: string;
 }) {
   const { t } = useLocale();
   const remaining = [...sunkLengths];
@@ -113,7 +117,9 @@ export function FleetStrip({
   return (
     <div
       className="fleet-strip"
-      aria-label={t("sidebar.fleetAfloat", { afloat })}
+      aria-label={
+        ariaLabel ?? t("sidebar.fleetAfloat", { afloat })
+      }
     >
       {glyphs.map((glyph) => (
         <span
@@ -130,9 +136,11 @@ export function FleetStrip({
           ))}
         </span>
       ))}
-      <span className="fleet-count">
-        <b>{afloat}</b> / {lengths.length}
-      </span>
+      {showCount ? (
+        <span className="fleet-count">
+          <b>{afloat}</b> / {lengths.length}
+        </span>
+      ) : null}
     </div>
   );
 }

@@ -126,7 +126,13 @@
   align-items: center;
   position: relative;
   padding: 0 5px 21px;
-  gap: 10px;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.night .theater-bottom .fleet-strip {
+  flex: 1;
+  min-width: 0;
 }
 
 .night .theater-bottom .small-label {
