@@ -23,6 +23,15 @@ function headers(extra: Record<string, string> = {}) {
   return headerMapFromRecord({
     host: "localhost:4317",
     origin: "http://localhost:4317",
+    ...extra,
+  });
+}
+
+function remoteHeaders(extra: Record<string, string> = {}) {
+  return headerMapFromRecord({
+    host: "ship.example",
+    origin: "https://ship.example",
+    "x-forwarded-proto": "https",
     "x-forwarded-for": "203.0.113.10",
     ...extra,
   });
@@ -83,11 +92,11 @@ describe("shot payload validation", () => {
 describe("Jev cost and bot guards", () => {
   it("refuses a shot without a play session", async () => {
     const result = await processJevShotRequest({
-      headers: headers(),
+      headers: remoteHeaders(),
       cookieHeader: undefined,
       bodyText: JSON.stringify(validRequest()),
       apiKey: "fake-key",
-      config: testConfig(),
+      config: testConfig({ enforceOrigin: true }),
       store: createAbuseStore(),
     });
     assert.equal(result.status, 403);
@@ -96,11 +105,11 @@ describe("Jev cost and bot guards", () => {
 
   it("refuses a forged session cookie", async () => {
     const result = await processJevShotRequest({
-      headers: headers(),
+      headers: remoteHeaders(),
       cookieHeader: "sgj_session=totally.forged",
       bodyText: JSON.stringify(validRequest()),
       apiKey: "fake-key",
-      config: testConfig(),
+      config: testConfig({ enforceOrigin: true }),
       store: createAbuseStore(),
     });
     assert.equal(result.status, 403);
@@ -142,11 +151,11 @@ describe("Jev cost and bot guards", () => {
     }) as typeof fetch;
     try {
       await processJevShotRequest({
-        headers: headers(),
+        headers: remoteHeaders(),
         cookieHeader: undefined,
         bodyText: JSON.stringify(validRequest()),
         apiKey: "fake-key",
-        config: testConfig(),
+        config: testConfig({ enforceOrigin: true }),
         store: createAbuseStore(),
       });
       assert.equal(fetches, 0);
@@ -156,11 +165,22 @@ describe("Jev cost and bot guards", () => {
   });
 
   it("rate-limits a burst from one IP", async () => {
-    const config = testConfig({ ipRequestsPerMinute: 2 });
-    const { store, cookieHeader, now } = await withSession(config);
+    const config = testConfig({ ipRequestsPerMinute: 2, enforceOrigin: true });
+    const store = createAbuseStore();
+    const minted = mintPlaySession({
+      headers: remoteHeaders(),
+      cookieHeader: undefined,
+      config,
+      store,
+      now: 1_700_000_000_000,
+    });
+    assert.equal(minted.status, 200);
+    const cookieHeader = minted.setCookie?.split(";")[0];
+    assert.ok(cookieHeader);
+    const now = 1_700_000_000_000;
     const bodyText = JSON.stringify(validRequest());
     const first = await processJevShotRequest({
-      headers: headers(),
+      headers: remoteHeaders(),
       cookieHeader,
       bodyText,
       apiKey: undefined,
@@ -169,7 +189,7 @@ describe("Jev cost and bot guards", () => {
       now,
     });
     const second = await processJevShotRequest({
-      headers: headers(),
+      headers: remoteHeaders(),
       cookieHeader,
       bodyText,
       apiKey: undefined,
@@ -178,7 +198,7 @@ describe("Jev cost and bot guards", () => {
       now: now + 1,
     });
     const third = await processJevShotRequest({
-      headers: headers(),
+      headers: remoteHeaders(),
       cookieHeader,
       bodyText,
       apiKey: undefined,
@@ -295,17 +315,17 @@ describe("Jev cost and bot guards", () => {
   });
 
   it("caps session mints per IP", () => {
-    const config = testConfig({ sessionMintsPerHour: 1 });
+    const config = testConfig({ sessionMintsPerHour: 1, enforceOrigin: true });
     const store = createAbuseStore();
     const first = mintPlaySession({
-      headers: headers(),
+      headers: remoteHeaders(),
       cookieHeader: undefined,
       config,
       store,
       now: 1_700_000_000_000,
     });
     const second = mintPlaySession({
-      headers: headers(),
+      headers: remoteHeaders(),
       cookieHeader: undefined,
       config,
       store,
@@ -313,5 +333,32 @@ describe("Jev cost and bot guards", () => {
     });
     assert.equal(first.status, 200);
     assert.equal(second.status, 429);
+  });
+
+  it("lets localhost play without a prior session even when origin is enforced", async () => {
+    const result = await processJevShotRequest({
+      headers: headers(),
+      cookieHeader: undefined,
+      bodyText: JSON.stringify(validRequest()),
+      apiKey: undefined,
+      config: testConfig({ enforceOrigin: true }),
+      store: createAbuseStore(),
+    });
+    assert.equal(result.status, 200);
+    assert.equal((result.json as JevShotResponse).source, "fallback");
+    assert.match(result.setCookie ?? "", /sgj_session=/);
+  });
+
+  it("treats 127.0.0.1 and localhost as the same local origin", () => {
+    const minted = mintPlaySession({
+      headers: headerMapFromRecord({
+        host: "localhost:4317",
+        origin: "http://127.0.0.1:4317",
+      }),
+      cookieHeader: undefined,
+      config: testConfig({ enforceOrigin: true }),
+      store: createAbuseStore(),
+    });
+    assert.equal(minted.status, 200);
   });
 });

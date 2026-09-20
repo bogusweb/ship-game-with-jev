@@ -22,6 +22,38 @@ function firstHop(value: string | null): string | null {
   return hop && hop.length > 0 ? hop : null;
 }
 
+export function parseHostname(value: string | null | undefined): string | null {
+  if (!value) return null;
+  try {
+    const url = value.includes("://") ? new URL(value) : new URL(`http://${value}`);
+    return url.hostname.replace(/^\[|\]$/g, "").toLowerCase();
+  } catch {
+    return null;
+  }
+}
+
+export function isLoopbackHostname(hostname: string | null | undefined): boolean {
+  if (!hostname) return false;
+  const h = hostname.toLowerCase().replace(/^\[|\]$/g, "");
+  return (
+    h === "localhost" ||
+    h === "127.0.0.1" ||
+    h === "::1" ||
+    h === "0:0:0:0:0:0:0:1" ||
+    h === "::ffff:127.0.0.1" ||
+    h.startsWith("127.") ||
+    h.endsWith(".localhost")
+  );
+}
+
+export function isLoopbackRequest(headers: HeaderMap): boolean {
+  const hostHeader = headers.get("x-forwarded-host") || headers.get("host");
+  if (!isLoopbackHostname(parseHostname(hostHeader))) return false;
+  const origin = requestOrigin(headers);
+  if (!origin) return true;
+  return isLoopbackHostname(parseHostname(origin));
+}
+
 export function clientIp(headers: HeaderMap, fallback = "unknown"): string {
   return (
     firstHop(headers.get("x-forwarded-for")) ||
@@ -47,9 +79,10 @@ export function requestOrigin(headers: HeaderMap): string | null {
 export function hostOrigin(headers: HeaderMap): string | null {
   const host = headers.get("x-forwarded-host") || headers.get("host");
   if (!host) return null;
+  const hostName = parseHostname(host);
   const proto =
     headers.get("x-forwarded-proto") ||
-    (host.includes("localhost") || host.startsWith("127.") ? "http" : "https");
+    (isLoopbackHostname(hostName) ? "http" : "https");
   return `${proto}://${host}`;
 }
 
@@ -57,6 +90,7 @@ export function originAllowed(
   headers: HeaderMap,
   allowedOrigins: string[],
 ): boolean {
+  if (isLoopbackRequest(headers)) return true;
   const origin = requestOrigin(headers);
   if (!origin) return false;
   if (allowedOrigins.includes(origin)) return true;

@@ -7,6 +7,7 @@ import { loadAbuseConfig } from "./config";
 import {
   clientIp,
   headerMapFromRecord,
+  isLoopbackRequest,
   originAllowed,
   type HeaderMap,
 } from "./request-meta";
@@ -68,8 +69,14 @@ function cookieHeader(
 }
 
 function isSecure(headers: HeaderMap): boolean {
-  const proto = headers.get("x-forwarded-proto");
-  return proto === "https";
+  if (isLoopbackRequest(headers)) return false;
+  return headers.get("x-forwarded-proto") === "https";
+}
+
+function originOk(config: AbuseConfig, headers: HeaderMap): boolean {
+  if (!config.enforceOrigin) return true;
+  if (isLoopbackRequest(headers)) return true;
+  return originAllowed(headers, config.allowedOrigins);
 }
 
 export function mintPlaySession(opts: {
@@ -84,11 +91,12 @@ export function mintPlaySession(opts: {
   const now = opts.now ?? Date.now();
   pruneAbuseStore(store, now);
 
-  if (config.enforceOrigin && !originAllowed(opts.headers, config.allowedOrigins)) {
+  if (!originOk(config, opts.headers)) {
     return jsonError(403, PUBLIC_ERRORS.forbidden);
   }
 
   const ip = clientIp(opts.headers);
+  const loopback = isLoopbackRequest(opts.headers);
   const existingToken = readCookie(opts.cookieHeader, config.cookieName);
   const existing = parseSessionToken(config.sessionSecret, existingToken);
   if (
@@ -103,7 +111,7 @@ export function mintPlaySession(opts: {
     };
   }
 
-  if (bumpIpMints(store, ip, now) > config.sessionMintsPerHour) {
+  if (!loopback && bumpIpMints(store, ip, now) > config.sessionMintsPerHour) {
     return jsonError(429, PUBLIC_ERRORS.tooMany, { retryAfterSec: 3600 });
   }
 
@@ -134,12 +142,16 @@ export async function processJevShotRequest(opts: {
   const now = opts.now ?? Date.now();
   pruneAbuseStore(store, now);
 
-  if (config.enforceOrigin && !originAllowed(headers, config.allowedOrigins)) {
+  if (!originOk(config, headers)) {
     return jsonError(403, PUBLIC_ERRORS.forbidden);
   }
 
   const ip = clientIp(headers);
-  if (bumpIpRequests(store, ip, now) > config.ipRequestsPerMinute) {
+  const loopback = isLoopbackRequest(headers);
+  if (
+    !loopback &&
+    bumpIpRequests(store, ip, now) > config.ipRequestsPerMinute
+  ) {
     return jsonError(429, PUBLIC_ERRORS.tooMany, { retryAfterSec: 60 });
   }
 
@@ -160,9 +172,13 @@ export async function processJevShotRequest(opts: {
   }
 
   const token = readCookie(opts.cookieHeader, config.cookieName);
-  const session = parseSessionToken(config.sessionSecret, token);
+  let session = parseSessionToken(config.sessionSecret, token);
   if (!session || now - session.t > config.sessionTtlMs) {
-    return jsonError(403, PUBLIC_ERRORS.forbidden);
+    if (!loopback) {
+      return jsonError(403, PUBLIC_ERRORS.forbidden);
+    }
+    session = { s: newSessionId(), t: now, n: 0 };
+    touchSession(store, session.s, session.t, 0);
   }
 
   const record = touchSession(store, session.s, session.t, session.n);
