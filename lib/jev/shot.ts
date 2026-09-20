@@ -214,7 +214,7 @@ export function fallbackShot(
   const scores = scoreLegalShots(playerView, moves);
   const legalKeys = scores.map((s) => s.label);
   const probMap: Record<string, number> = {};
-  const total = scores.reduce((sum, s) => s + Math.max(1, s.heat), 0);
+  const total = scores.reduce((sum, s) => sum + Math.max(1, s.heat), 0);
   for (const score of scores) {
     probMap[score.label] = (Math.max(1, score.heat) / total) * 100;
   }
