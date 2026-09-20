@@ -33,6 +33,8 @@ npm run dev
 
 Open [http://localhost:4317](http://localhost:4317).
 
+The play UI is English and Polish. Use the **EN / PL** control in the header. The choice is stored in the browser (`localStorage`). English is the default unless the browser language is Polish. This README stays English.
+
 ## Build
 
 ```bash
