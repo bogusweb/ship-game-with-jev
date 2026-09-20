@@ -223,12 +223,16 @@ describe("session turns", () => {
     const playerMiss = playerShoot(state, miss.row, miss.col);
     assert.equal(playerMiss.result.outcome, "miss");
     assert.equal(playerMiss.state.turn, "jev");
+    assert.deepEqual(playerMiss.state.lastPlayerShot, miss);
+    assert.equal(playerMiss.state.lastJevShot, null);
     state = playerMiss.state;
 
     const view = createPlayerAttackView();
     const hitCell = state.playerBoard.ships[0]!.cells[0]!;
     const jevHit = jevShoot(state, hitCell.row, hitCell.col, view);
     assert.ok(jevHit.result.outcome === "hit" || jevHit.result.outcome === "sunk");
+    assert.deepEqual(jevHit.state.lastJevShot, hitCell);
+    assert.deepEqual(jevHit.state.lastPlayerShot, miss);
     if (jevHit.state.phase === "playing") {
       assert.equal(jevHit.state.turn, "jev");
     }
@@ -254,6 +258,8 @@ describe("session turns", () => {
     );
     assert.equal(jevMiss.result.outcome, "miss");
     assert.equal(jevMiss.state.turn, "player");
+    assert.deepEqual(jevMiss.state.lastJevShot, missOnPlayer);
+    assert.deepEqual(jevMiss.state.lastPlayerShot, miss);
   });
 
   it("rejects Jev shots when no legal moves remain", () => {
