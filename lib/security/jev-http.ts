@@ -21,9 +21,7 @@ import {
 } from "./session";
 import {
   bumpDaily,
-  bumpIpMints,
   bumpIpPaid,
-  bumpIpRequests,
   defaultAbuseStore,
   peekDaily,
   persistDailyBudget,
@@ -36,7 +34,6 @@ import { parseJevShotRequest } from "./validate-shot-request";
 export const PUBLIC_ERRORS = {
   invalid: "Invalid request",
   forbidden: "Forbidden",
-  tooMany: "Too many requests. Try again in a moment.",
   unavailable: "Jev is unavailable",
 } as const;
 
@@ -95,8 +92,6 @@ export function mintPlaySession(opts: {
     return jsonError(403, PUBLIC_ERRORS.forbidden);
   }
 
-  const ip = clientIp(opts.headers);
-  const loopback = isLoopbackRequest(opts.headers);
   const existingToken = readCookie(opts.cookieHeader, config.cookieName);
   const existing = parseSessionToken(config.sessionSecret, existingToken);
   if (
@@ -109,10 +104,6 @@ export function mintPlaySession(opts: {
       json: { ok: true },
       setCookie: cookieHeader(config, existing, isSecure(opts.headers)),
     };
-  }
-
-  if (!loopback && bumpIpMints(store, ip, now) > config.sessionMintsPerHour) {
-    return jsonError(429, PUBLIC_ERRORS.tooMany, { retryAfterSec: 3600 });
   }
 
   const payload: SessionPayload = { s: newSessionId(), t: now, n: 0 };
@@ -148,12 +139,6 @@ export async function processJevShotRequest(opts: {
 
   const ip = clientIp(headers);
   const loopback = isLoopbackRequest(headers);
-  if (
-    !loopback &&
-    bumpIpRequests(store, ip, now) > config.ipRequestsPerMinute
-  ) {
-    return jsonError(429, PUBLIC_ERRORS.tooMany, { retryAfterSec: 60 });
-  }
 
   if (opts.bodyText.length > config.maxBodyBytes) {
     return jsonError(400, PUBLIC_ERRORS.invalid);
@@ -182,9 +167,7 @@ export async function processJevShotRequest(opts: {
   }
 
   const record = touchSession(store, session.s, session.t, session.n);
-  if (session.n < record.n) {
-    return jsonError(429, PUBLIC_ERRORS.tooMany, { retryAfterSec: 30 });
-  }
+  record.n = Math.max(record.n, session.n);
 
   const wantsPaidModel =
     Boolean(opts.apiKey) &&
@@ -193,27 +176,13 @@ export async function processJevShotRequest(opts: {
       (parsed.value.playerLegalTargets?.length ?? 0) >= 2);
 
   let allowPaid = wantsPaidModel;
-  if (allowPaid) {
+  if (allowPaid && !loopback) {
     if (record.n >= config.sessionPaidBudget) allowPaid = false;
     else if (peekDaily(store, now) >= config.dailyPaidBudget) allowPaid = false;
     else {
       const hour = store.ipHour.get(ip);
-      const hourCount =
-        hour && now < hour.resetAt ? hour.count : 0;
+      const hourCount = hour && now < hour.resetAt ? hour.count : 0;
       if (hourCount >= config.ipPaidPerHour) allowPaid = false;
-      else if (
-        record.lastPaidAt > 0 &&
-        now - record.lastPaidAt < config.minPaidIntervalMs
-      ) {
-        return jsonError(429, PUBLIC_ERRORS.tooMany, {
-          retryAfterSec: 1,
-          setCookie: cookieHeader(
-            config,
-            { s: session.s, t: session.t, n: record.n },
-            isSecure(headers),
-          ),
-        });
-      }
     }
   }
 
