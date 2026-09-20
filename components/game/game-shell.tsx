@@ -390,7 +390,10 @@ export function GameShell() {
     turn: game.turn,
     isJevThinking,
   });
-  const playerRemaining = unsunkShipLengths(game.playerBoard);
+  const playerRemaining =
+    game.phase === "placement"
+      ? [...FLEET_LENGTHS]
+      : unsunkShipLengths(game.playerBoard);
   const jevRemaining = unsunkShipLengths(game.jevBoard);
 
   return (
