@@ -40,6 +40,7 @@ const en = {
   "status.won": "You sank Jev's fleet. Victory!",
   "status.lost": "Jev sank your fleet. Better luck next round!",
   "status.previewAt": "Preview at {label}",
+  "status.targetLocked": "Target locked: {label}.",
   "status.invalidPlacement": "Invalid placement",
   "status.invalidShot": "Invalid shot",
 
@@ -318,6 +319,7 @@ const pl: Record<MessageKey, string> = {
   "status.won": "Zatopiłeś flotę Jeva. Zwycięstwo!",
   "status.lost": "Jev zatopił twoją flotę. Powodzenia w następnej rundzie!",
   "status.previewAt": "Podgląd na {label}",
+  "status.targetLocked": "Cel namierzony: {label}.",
   "status.invalidPlacement": "Nieprawidłowe ustawienie",
   "status.invalidShot": "Nieprawidłowy strzał",
 

@@ -102,7 +102,7 @@ function formatStatus(t: Translate, status: StatusState): string {
     case "fleetReady":
       return t("status.fleetReady");
     case "targetSelected":
-      return t("status.previewAt", { label: status.label });
+      return t("status.targetLocked", { label: status.label });
     case "hitAgain":
       return t("status.hitAgain");
     case "missJevThinking":
