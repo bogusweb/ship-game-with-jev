@@ -229,6 +229,26 @@
   flex-shrink: 0;
 }
 
+.night .placement-quick-actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 14px;
+}
+
+.night .placement-quick-actions .secondary {
+  font-size: 10px;
+  flex: 1;
+  padding: 11px 10px;
+}
+
+.night .placement-quick-actions .text-btn {
+  font-size: 10px;
+  color: var(--muted);
+  flex-shrink: 0;
+}
+
 .night .setup-progress {
   display: flex;
   gap: 13px;
@@ -387,25 +407,6 @@
   border: 1px solid var(--line);
   padding: 3px 6px;
   border-radius: 3px;
-  color: var(--muted);
-}
-
-.night .placement-utilities {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 10px;
-  margin-top: 12px;
-}
-
-.night .placement-utilities .secondary {
-  font-size: 10px;
-  flex: 1;
-  padding: 11px 8px;
-}
-
-.night .placement-utilities .text-btn {
-  font-size: 10px;
   color: var(--muted);
 }
 
