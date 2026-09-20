@@ -34,7 +34,7 @@ const ORTHO: Coord[] = [
 
 /** Remaining unsunk lengths from the canonical fleet minus sunk lengths (multiset). */
 export function remainingFleetFromSunk(sunkLengths: number[]): number[] {
-  const remaining = [...FLEET_LENGTHS];
+  const remaining: number[] = [...FLEET_LENGTHS];
   for (const len of sunkLengths) {
     const idx = remaining.indexOf(len);
     if (idx >= 0) remaining.splice(idx, 1);
@@ -323,7 +323,7 @@ export function scoreLegalShots(
         reason = "hunt-density";
       }
     } else if (smallest >= 2 && parity) {
-      heat += Math.max(2, Math.round(heat * 0.35));
+        heat += Math.max(2, Math.round(heat * 0.35));
       reason = "parity";
     } else if (smallest >= 2) {
       reason = "off-parity";
