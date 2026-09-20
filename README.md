@@ -52,6 +52,16 @@ npm run lint
 
 Jev uses the `/api/jev/shot` proxy. Without `SHIP_GAME_TYPESAFE_API_KEY`, a local heuristic fallback still plays.
 
+## Hunt-mode verification
+
+Live hunt after heatmap-backed fire Choice. The journal reports **H3 · 82.0% from Jev** (not the heuristic fallback), and the shots sit on the checkerboard instead of walking A1→B1.
+
+![Fleet auto-placed, empty hunt](docs/jev-hunt-after-autoplace.png)
+
+![Mid-game boards and journal](docs/jev-hunt-midgame-board.png)
+
+The same mid-game frame is also saved as [`docs/jev-hunt-journal-jev-source.png`](docs/jev-hunt-journal-jev-source.png).
+
 ## Project stages
 
 1. **Scaffold** — Next.js + Tailwind + shadcn, Netlify-ready
