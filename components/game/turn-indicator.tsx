@@ -1,5 +1,7 @@
 "use client";
 
+import { useLocale } from "@/lib/i18n";
+
 export type TurnKind =
   | "placement"
   | "your-shot"
@@ -12,19 +14,44 @@ type TurnIndicatorProps = {
   kind: TurnKind;
 };
 
-const COPY: Record<TurnKind, { label: string; hint: string }> = {
-  placement: { label: "Place your fleet", hint: "Ships go on the left board" },
-  "your-shot": { label: "Your shot", hint: "Fire on Jev's waters" },
-  "jev-thinking": { label: "Jev is thinking", hint: "Waiting on Jev's shot" },
-  "jev-shot": { label: "Jev's shot", hint: "Jev is firing at your fleet" },
-  won: { label: "You won", hint: "Jev's fleet is gone" },
-  lost: { label: "Jev won", hint: "Your fleet is gone" },
-};
+const TURN_KINDS: TurnKind[] = [
+  "placement",
+  "your-shot",
+  "jev-thinking",
+  "jev-shot",
+  "won",
+  "lost",
+];
 
-const TURN_KINDS = Object.keys(COPY) as TurnKind[];
+function copyFor(
+  t: ReturnType<typeof useLocale>["t"],
+  kind: TurnKind,
+): { label: string; hint: string } {
+  switch (kind) {
+    case "placement":
+      return {
+        label: t("turn.placement.label"),
+        hint: t("turn.placement.hint"),
+      };
+    case "your-shot":
+      return { label: t("turn.yourShot.label"), hint: t("turn.yourShot.hint") };
+    case "jev-thinking":
+      return {
+        label: t("turn.jevThinking.label"),
+        hint: t("turn.jevThinking.hint"),
+      };
+    case "jev-shot":
+      return { label: t("turn.jevShot.label"), hint: t("turn.jevShot.hint") };
+    case "won":
+      return { label: t("turn.won.label"), hint: t("turn.won.hint") };
+    case "lost":
+      return { label: t("turn.lost.label"), hint: t("turn.lost.hint") };
+  }
+}
 
 export function TurnIndicator({ kind }: TurnIndicatorProps) {
-  const copy = COPY[kind];
+  const { t } = useLocale();
+  const copy = copyFor(t, kind);
   const yours = kind === "your-shot" || kind === "placement";
   const jevs = kind === "jev-thinking" || kind === "jev-shot";
 
@@ -53,7 +80,7 @@ export function TurnIndicator({ kind }: TurnIndicatorProps) {
         />
         <span className="grid">
           {TURN_KINDS.map((turn) => {
-            const item = COPY[turn];
+            const item = copyFor(t, turn);
             const active = turn === kind;
             return (
               <span
