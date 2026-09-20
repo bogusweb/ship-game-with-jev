@@ -46,7 +46,9 @@ export function BoardCell({
   compact,
 }: BoardCellProps) {
   const isShot = visual === "miss" || visual === "hit" || visual === "halo";
-  const size = compact ? "h-6 w-6 sm:h-7 sm:w-7" : "h-7 w-7 sm:h-8 sm:w-8";
+  const size = compact
+    ? "aspect-square h-auto w-full min-h-6"
+    : "aspect-square h-auto w-full min-h-7 sm:min-h-8";
 
   return (
     <button
@@ -56,7 +58,7 @@ export function BoardCell({
       onClick={onClick}
       onMouseEnter={onMouseEnter}
       className={cn(
-        "relative rounded-md border text-[10px] transition-colors",
+        "relative min-w-0 rounded-md border text-[10px] transition-colors",
         size,
         visualStyles[visual],
         onClick && !disabled && "cursor-pointer",

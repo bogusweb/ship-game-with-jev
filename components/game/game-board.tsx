@@ -39,10 +39,10 @@ export function GameBoard({
 
   const boardPanel = (
     <div
-      className="rounded-2xl bg-[#d4e4d0]/40 p-3 shadow-sm"
+      className="w-full rounded-2xl bg-[#d4e4d0]/40 p-3 shadow-sm"
       onMouseLeave={onCellLeave}
     >
-      <div className="mb-1 grid grid-cols-[1.5rem_repeat(10,1fr)] gap-0.5 text-center text-[10px] text-[#5c4a3a]/60">
+      <div className="mb-1 grid grid-cols-[1.75rem_repeat(10,minmax(0,1fr))] gap-0.5 text-center text-[10px] text-[#5c4a3a]/60 sm:text-xs">
         <span />
         {cols.map((c) => (
           <span key={c}>{c}</span>
@@ -52,9 +52,9 @@ export function GameBoard({
         {Array.from({ length: BOARD_SIZE }, (_, row) => (
           <div
             key={row}
-            className="grid grid-cols-[1.5rem_repeat(10,1fr)] items-center gap-0.5"
+            className="grid grid-cols-[1.75rem_repeat(10,minmax(0,1fr))] items-stretch gap-0.5"
           >
-            <span className="text-center text-[10px] text-[#5c4a3a]/60">
+            <span className="flex items-center justify-center text-center text-[10px] text-[#5c4a3a]/60 sm:text-xs">
               {row + 1}
             </span>
             {Array.from({ length: BOARD_SIZE }, (_, col) => {
@@ -87,7 +87,7 @@ export function GameBoard({
   );
 
   return (
-    <div className="flex flex-col gap-3">
+    <div className="flex w-full min-w-0 flex-col gap-3">
       <div>
         <h2 className="text-lg font-semibold text-[#2c1810]">{title}</h2>
         {subtitle && (

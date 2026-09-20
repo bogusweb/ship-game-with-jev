@@ -16,7 +16,7 @@ export function PlayerShotPrediction({
   error,
 }: PlayerShotPredictionProps) {
   return (
-    <div className="rounded-2xl bg-white/60 p-4 shadow-sm ring-1 ring-[#c8d4c0]/40">
+    <div className="w-full rounded-2xl bg-white/60 p-4 shadow-sm ring-1 ring-[#c8d4c0]/40">
       <p className="text-xs font-medium uppercase tracking-wide text-[#5c4a3a]/60">
         Next shot
       </p>
@@ -40,7 +40,7 @@ export function PlayerShotPrediction({
         <p className="mt-1 text-sm text-[#2c1810]">
           Jev expects{" "}
           <span className="font-semibold text-[#4a9d93]">{label}</span>
-          {percent != null ? ` · ${percent.toFixed(1)}%` : ""}
+          {percent != null ? ` \u00b7 ${percent.toFixed(1)}%` : ""}
         </p>
       )}
     </div>
