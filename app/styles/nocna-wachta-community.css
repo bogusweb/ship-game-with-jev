@@ -1,0 +1,125 @@
+/* Nocna wachta — shared-waters stats, result screens, fleet and setup pages. */
+
+/* Community stats --------------------------------------------------------- */
+
+.night .community {
+  --mini-sea: #1d3a30;
+  max-width: 1470px;
+  margin: 57px auto 0;
+  border-top: 1px solid var(--line);
+  padding: 43px 0 10px;
+}
+
+.night .community-heading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 28px;
+  text-align: center;
+}
+
+.night .community-heading .eyebrow {
+  font-size: 9px;
+  color: var(--muted);
+  letter-spacing: 2px;
+  margin-bottom: 11px;
+}
+
+.night .community h2 {
+  font-family: var(--font-space-grotesk), sans-serif;
+  font-weight: 500;
+  font-size: 27px;
+  letter-spacing: -0.8px;
+  white-space: nowrap;
+}
+
+.night .community h2 span {
+  color: var(--accent);
+}
+
+.night .section-rule {
+  height: 1px;
+  max-width: 310px;
+  flex: 1;
+  background: repeating-linear-gradient(
+    90deg,
+    var(--line) 0 5px,
+    transparent 5px 10px
+  );
+}
+
+.night .community-metrics {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  margin: 33px 0 25px;
+  text-align: center;
+}
+
+.night .community-metrics > div {
+  border-right: 1px solid var(--line);
+}
+
+.night .community-metrics > div:last-child {
+  border: 0;
+}
+
+.night .community-metrics strong {
+  display: block;
+  font-family: var(--font-space-grotesk), sans-serif;
+  font-weight: 500;
+  font-size: 44px;
+  line-height: 1.1;
+  letter-spacing: -1.8px;
+  font-variant-numeric: tabular-nums;
+}
+
+.night .community-metrics strong small {
+  font-size: 25px;
+  letter-spacing: -1px;
+  margin-left: 2px;
+}
+
+.night .community-metrics > div > span {
+  display: block;
+  font-size: 11px;
+  margin-top: 9px;
+  color: var(--muted);
+}
+
+.night .community-metrics .human-score strong {
+  color: var(--sj-jev-victory);
+}
+
+.night .community-metrics .jev-score strong {
+  color: var(--accent);
+}
+
+.night .community-metrics .metric-unavailable strong {
+  color: var(--muted);
+}
+
+.night .community-context {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 13px;
+  color: var(--muted);
+  font-size: 10px;
+  flex-wrap: wrap;
+}
+
+.night .community-context b {
+  font-weight: 500;
+}
+
+.night .community-note {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 9px;
+}
+
+.night .community-note .dot {
+  width: 4px;
+  height: 4px;
+}

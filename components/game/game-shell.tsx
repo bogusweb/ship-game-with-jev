@@ -1,24 +1,34 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { Button } from "@/components/ui/button";
 import {
-  BOARD_SIZE,
   FLEET_LENGTHS,
   autoPlacePlayerFleet,
   cellLabel,
   createNewGame,
   createPlayerAttackView,
-  getShipCells,
+  draftComplete,
+  draftFromBoard,
+  draftIndexAtCell,
+  draftPlacementError,
+  draftShips,
+  emptyDraft,
+  gameFromDraft,
   jevShoot,
   legalMoves,
-  nextShipLength,
-  placePlayerShip,
+  nextDraftIndex,
+  ownBoardShips,
   playerShoot,
+  revealedOpponentShips,
   unsunkShipLengths,
-  validatePlacement,
 } from "@/lib/game";
-import type { GameState, OpponentView, Orientation, ShotCellState } from "@/lib/game";
+import type {
+  Coord,
+  DraftShip,
+  GameState,
+  OpponentView,
+  Orientation,
+} from "@/lib/game";
 import {
   makeJevHistoryItem,
   makeYouHistoryItem,
@@ -37,29 +47,34 @@ import {
   type JevShotResponse,
   type PlayerNextShotResponse,
 } from "@/lib/jev/client";
-import { shipAtCell } from "@/lib/game/placement";
+import { shipName, translateEngineError, useLocale, type Translate } from "@/lib/i18n";
+import { AttackConsole } from "./nocna-wachta/attack-console";
 import {
-  shipName,
-  translateEngineError,
-  useLocale,
-  type Translate,
-} from "@/lib/i18n";
-import type { CellVisual } from "./board-cell";
-import { GameBoard } from "./game-board";
-import { LanguageSwitcher } from "./language-switcher";
-import { MoveJournal } from "./move-journal";
-import {
-  PlayerShotPrediction,
-  type PredictionStatus,
-} from "./player-shot-prediction";
-import { TurnIndicator, turnKindFromState } from "./turn-indicator";
+  FleetStrip,
+  Legend,
+  PageFooter,
+  TopBar,
+  TurnPill,
+  type TurnPillKind,
+} from "./nocna-wachta/chrome";
+import { CommunityStats } from "./nocna-wachta/community-stats";
+import { FleetScreen } from "./nocna-wachta/fleet-screen";
+import { Icon } from "./nocna-wachta/icons";
+import { JevCard, type PredictionStatus } from "./nocna-wachta/jev-card";
+import { OperationsLog } from "./nocna-wachta/operations-log";
+import { ResultScreen } from "./nocna-wachta/result-screen";
+import { RulesDialog } from "./nocna-wachta/rules-dialog";
+import { SeaBoard } from "./nocna-wachta/sea-board";
+import { SetupScreen } from "./nocna-wachta/setup-screen";
 
 type StatusState =
   | { code: "placeFleet" }
-  | { code: "placing"; length: number; placed: number; total: number }
-  | { code: "placingClick"; length: number }
+  | { code: "setupPlaced" }
+  | { code: "setupMove" }
+  | { code: "setupAutoPlaced" }
+  | { code: "setupReady" }
   | { code: "fleetReady" }
-  | { code: "autoPlaced" }
+  | { code: "targetSelected"; label: string }
   | { code: "hitAgain" }
   | { code: "missJevThinking" }
   | { code: "sunkJevShip"; length: number }
@@ -76,22 +91,18 @@ function formatStatus(t: Translate, status: StatusState): string {
   switch (status.code) {
     case "placeFleet":
       return t("status.placeFleet");
-    case "placing":
-      return t("status.placing", {
-        ship: shipName(t, status.length),
-        length: status.length,
-        placed: status.placed,
-        total: status.total,
-      });
-    case "placingClick":
-      return t("status.placingClick", {
-        ship: shipName(t, status.length),
-        length: status.length,
-      });
+    case "setupPlaced":
+      return t("setup.statusPlaced");
+    case "setupMove":
+      return t("setup.statusMove");
+    case "setupAutoPlaced":
+      return t("setup.statusAutoPlaced");
+    case "setupReady":
+      return t("setup.statusReady");
     case "fleetReady":
       return t("status.fleetReady");
-    case "autoPlaced":
-      return t("status.autoPlaced");
+    case "targetSelected":
+      return t("status.previewAt", { label: status.label });
     case "hitAgain":
       return t("status.hitAgain");
     case "missJevThinking":
@@ -152,16 +163,26 @@ async function postJev(request: JevShotRequest) {
   return res.json();
 }
 
+type Screen = "game" | "fleet";
+
 export function GameShell() {
   const { t } = useLocale();
   const [game, setGame] = useState<GameState>(() => createNewGame());
   const [playerView, setPlayerView] = useState<OpponentView>(() =>
     createPlayerAttackView(),
   );
+  const [screen, setScreen] = useState<Screen>("game");
+  const [focusShip, setFocusShip] = useState(0);
+
+  const [draft, setDraft] = useState<(DraftShip | null)[]>(() => emptyDraft());
+  const [activeSlot, setActiveSlot] = useState<number | null>(0);
   const [orientation, setOrientation] = useState<Orientation>("horizontal");
-  const [hoverCell, setHoverCell] = useState<{ row: number; col: number } | null>(
-    null,
-  );
+  const [hoverCell, setHoverCell] = useState<Coord | null>(null);
+
+  const [selected, setSelected] = useState<Coord | null>(null);
+  const [scan, setScan] = useState(false);
+  const [rulesOpen, setRulesOpen] = useState(false);
+
   const [history, setHistory] = useState<MatchHistoryItem[]>([]);
   const [isJevThinking, setIsJevThinking] = useState(false);
   const [jevError, setJevError] = useState<string | null>(null);
@@ -172,72 +193,78 @@ export function GameShell() {
     useState<PredictionStatus>("empty");
   const [predictionLabel, setPredictionLabel] = useState<string | undefined>();
   const [predictionPercent, setPredictionPercent] = useState<number | undefined>();
+  const [predictionCell, setPredictionCell] = useState<Coord | null>(null);
   const [predictionFailed, setPredictionFailed] = useState(false);
 
-  const currentShipLength = nextShipLength(game.playerBoard);
-  const placedCount = game.playerBoard.ships.length;
+  const gameOver = game.phase === "won" || game.phase === "lost";
+  const statusText = formatStatus(t, status);
 
-  const previewCells = useMemo(() => {
-    if (!hoverCell || !currentShipLength || game.phase !== "placement") {
-      return new Map<string, "preview" | "invalid">();
-    }
-    const cells = getShipCells(hoverCell, currentShipLength, orientation);
-    const map = new Map<string, "preview" | "invalid">();
-    const error = validatePlacement(game.playerBoard, {
-      id: "preview",
-      length: currentShipLength,
-      orientation,
+  const activeLength = activeSlot != null ? FLEET_LENGTHS[activeSlot] : null;
+  const placementError = useMemo(() => {
+    if (!hoverCell || activeSlot == null || activeLength == null) return null;
+    return draftPlacementError(draft, {
+      index: activeSlot,
+      length: activeLength,
       origin: hoverCell,
+      orientation,
     });
-    for (const c of cells) {
-      if (c.row < 0 || c.row >= BOARD_SIZE || c.col < 0 || c.col >= BOARD_SIZE) {
-        map.set(`${c.row},${c.col}`, "invalid");
-      } else {
-        map.set(`${c.row},${c.col}`, error ? "invalid" : "preview");
-      }
+  }, [draft, hoverCell, activeSlot, activeLength, orientation]);
+
+  /* Placement ------------------------------------------------------------- */
+
+  const handlePlace = (row: number, col: number) => {
+    const occupied = draftIndexAtCell(draft, row, col);
+    if (occupied != null) {
+      const ship = draft[occupied];
+      setDraft((prev) => prev.map((e, i) => (i === occupied ? null : e)));
+      setActiveSlot(occupied);
+      if (ship) setOrientation(ship.orientation);
+      setStatus({ code: "setupMove" });
+      return;
     }
-    return map;
-  }, [hoverCell, currentShipLength, orientation, game.playerBoard, game.phase]);
+    if (activeSlot == null || activeLength == null) return;
 
-  const playerBoardVisual = useCallback(
-    (row: number, col: number): CellVisual => {
-      const key = `${row},${col}`;
-      const preview = previewCells.get(key);
-      if (preview) return preview;
+    const candidate: DraftShip = {
+      index: activeSlot,
+      length: activeLength,
+      origin: { row, col },
+      orientation,
+    };
+    const error = draftPlacementError(draft, candidate);
+    if (error) {
+      setStatus({ code: "engine", message: error });
+      return;
+    }
 
-      const shot = playerView.cells[row][col];
-      if (shot === "hit") return "hit";
-      if (shot === "miss") return "miss";
-      if (shot === "halo") return "halo";
+    const next = draft.map((entry, i) => (i === activeSlot ? candidate : entry));
+    setDraft(next);
+    const following = nextDraftIndex(next);
+    setActiveSlot(following);
+    setHoverCell(null);
+    setStatus(following == null ? { code: "setupReady" } : { code: "setupPlaced" });
+  };
 
-      if (shipAtCell(game.playerBoard, row, col)) return "ship";
-      return "empty";
-    },
-    [game.playerBoard, playerView, previewCells],
-  );
+  const handleAutoDeploy = () => {
+    const board = autoPlacePlayerFleet(createNewGame()).playerBoard;
+    setDraft(draftFromBoard(board));
+    setActiveSlot(null);
+    setHoverCell(null);
+    setStatus({ code: "setupAutoPlaced" });
+  };
 
-  const jevBoardVisual = useCallback(
-    (row: number, col: number): CellVisual => {
-      const shot = game.opponentView.cells[row][col] as ShotCellState;
-      if (shot === "hit") return "hit";
-      if (shot === "miss") return "miss";
-      if (shot === "halo") return "halo";
-      return "unknown";
-    },
-    [game.opponentView],
-  );
+  const handleClearDraft = () => {
+    setDraft(emptyDraft());
+    setActiveSlot(0);
+    setHoverCell(null);
+    setStatus({ code: "placeFleet" });
+  };
 
-  const handlePlaceClick = (row: number, col: number) => {
-    if (game.phase !== "placement" || !currentShipLength) return;
+  const handleStartBattle = () => {
+    if (!draftComplete(draft)) return;
     try {
-      const next = placePlayerShip(game, { row, col }, orientation);
-      setGame(next);
-      if (next.phase === "playing") {
-        setStatus({ code: "fleetReady" });
-      } else {
-        const len = nextShipLength(next.playerBoard);
-        setStatus({ code: "placingClick", length: len ?? 2 });
-      }
+      setGame((prev) => gameFromDraft(prev, draft));
+      setStatus({ code: "fleetReady" });
+      setSelected(null);
     } catch (e) {
       setStatus(
         e instanceof Error
@@ -247,33 +274,37 @@ export function GameShell() {
     }
   };
 
-  const handleAutoPlace = () => {
-    const next = autoPlacePlayerFleet(game);
-    setGame(next);
-    setStatus({ code: "autoPlaced" });
-  };
+  /* Jev turn -------------------------------------------------------------- */
 
-  const applyPrediction = useCallback((result: {
-    prediction?: { label: string; chosenPercent: number } | null;
-    predictionError?: string | null;
-  }) => {
-    if (result.prediction) {
-      setPredictionStatus("ready");
-      setPredictionLabel(result.prediction.label);
-      setPredictionPercent(result.prediction.chosenPercent);
-      setPredictionFailed(false);
-      return;
-    }
-    setPredictionStatus("error");
-    setPredictionFailed(true);
-  }, []);
+  const applyPrediction = useCallback(
+    (result: {
+      prediction?: {
+        label: string;
+        chosenPercent: number;
+        chosen?: Coord;
+      } | null;
+    }) => {
+      if (result.prediction) {
+        setPredictionStatus("ready");
+        setPredictionLabel(result.prediction.label);
+        setPredictionPercent(result.prediction.chosenPercent);
+        setPredictionCell(result.prediction.chosen ?? null);
+        setPredictionFailed(false);
+        return;
+      }
+      setPredictionStatus("error");
+      setPredictionCell(null);
+      setPredictionFailed(true);
+    },
+    [],
+  );
 
   const runJevTurn = useCallback(
     async (
       state: GameState,
       view: OpponentView,
-      history: { thisMatch: PlayerShotRecord[]; recent: PlayerShotRecord[] },
-      playerLegalTargets: { row: number; col: number }[],
+      shotHistory: { thisMatch: PlayerShotRecord[]; recent: PlayerShotRecord[] },
+      playerLegalTargets: Coord[],
     ) => {
       setIsJevThinking(true);
       setJevError(null);
@@ -283,10 +314,7 @@ export function GameShell() {
       let askedPrediction = false;
 
       try {
-        while (
-          currentState.phase === "playing" &&
-          currentState.turn === "jev"
-        ) {
+        while (currentState.phase === "playing" && currentState.turn === "jev") {
           const moves = legalMoves(currentView);
           if (moves.length === 0) throw new Error("No legal moves for Jev");
 
@@ -294,20 +322,17 @@ export function GameShell() {
             move: currentState.moveCount + 1,
             legalMoves: moves,
             playerView: currentView,
-            playerShotHistory: history,
-            playerLegalTargets: askedPrediction
-              ? undefined
-              : playerLegalTargets,
+            playerShotHistory: shotHistory,
+            playerLegalTargets: askedPrediction ? undefined : playerLegalTargets,
           })) as JevShotResponse;
+
           if (!askedPrediction) {
             askedPrediction = true;
-            if (playerLegalTargets.length > 0) {
-              applyPrediction(jevResponse);
-            }
+            if (playerLegalTargets.length > 0) applyPrediction(jevResponse);
           }
+
           const chosen = jevResponse.chosen;
           const entry = toJournalEntry(currentState.moveCount + 1, jevResponse);
-
           const outcome = jevShoot(
             currentState,
             chosen.row,
@@ -316,6 +341,7 @@ export function GameShell() {
           );
           currentState = outcome.state;
           currentView = outcome.playerView;
+
           setHistory((prev) => [
             ...prev,
             makeJevHistoryItem({
@@ -343,14 +369,9 @@ export function GameShell() {
           }
         }
       } catch (e) {
-        setJevError(
-          e instanceof Error ? e.message : "Jev could not choose a shot",
-        );
+        setJevError(e instanceof Error ? e.message : "Jev could not choose a shot");
         if (!askedPrediction) {
-          applyPrediction({
-            prediction: null,
-            predictionError: "Could not predict your next shot.",
-          });
+          applyPrediction({ prediction: null });
         }
       } finally {
         setIsJevThinking(false);
@@ -361,12 +382,13 @@ export function GameShell() {
 
   const runPredictionOnly = useCallback(
     async (
-      history: { thisMatch: PlayerShotRecord[]; recent: PlayerShotRecord[] },
-      playerLegalTargets: { row: number; col: number }[],
+      shotHistory: { thisMatch: PlayerShotRecord[]; recent: PlayerShotRecord[] },
+      playerLegalTargets: Coord[],
       view: OpponentView,
     ) => {
       if (playerLegalTargets.length === 0) {
         setPredictionStatus("empty");
+        setPredictionCell(null);
         return;
       }
       try {
@@ -374,25 +396,40 @@ export function GameShell() {
           move: 0,
           legalMoves: [],
           playerView: view,
-          playerShotHistory: history,
+          playerShotHistory: shotHistory,
           playerLegalTargets,
         })) as PlayerNextShotResponse;
         applyPrediction(response);
       } catch {
-        applyPrediction({
-          prediction: null,
-          predictionError: "Could not predict your next shot.",
-        });
+        applyPrediction({ prediction: null });
       }
     },
     [applyPrediction],
   );
 
-  const handleFire = (row: number, col: number) => {
-    if (game.phase !== "playing" || game.turn !== "player" || isJevThinking) return;
+  /* Firing ---------------------------------------------------------------- */
+
+  const canSelect = (row: number, col: number) =>
+    game.phase === "playing" &&
+    game.turn === "player" &&
+    !isJevThinking &&
+    game.opponentView.cells[row][col] === "unknown";
+
+  const handleSelect = (row: number, col: number) => {
+    if (!canSelect(row, col)) return;
+    setSelected({ row, col });
+    setStatus({ code: "targetSelected", label: cellLabel(row, col) });
+  };
+
+  const handleFire = () => {
+    if (!selected) return;
+    const { row, col } = selected;
+    if (!canSelect(row, col)) return;
+
     try {
       const { state, result } = playerShoot(game, row, col);
       setGame(state);
+      setSelected(null);
 
       const nextMatchShots = [
         ...matchShots,
@@ -408,7 +445,8 @@ export function GameShell() {
         }),
       ]);
       saveStoredPlayerShotHistory(nextMatchShots, recentShots);
-      const history = { thisMatch: nextMatchShots, recent: recentShots };
+
+      const shotHistory = { thisMatch: nextMatchShots, recent: recentShots };
       const playerTargets = legalMoves(state.opponentView);
       setPredictionStatus("loading");
       setPredictionFailed(false);
@@ -423,14 +461,14 @@ export function GameShell() {
 
       if (state.phase === "won") {
         setStatus({ code: "won" });
-        void runPredictionOnly(history, playerTargets, playerView);
+        void runPredictionOnly(shotHistory, playerTargets, playerView);
         return;
       }
 
       if (state.turn === "jev") {
-        void runJevTurn(state, playerView, history, playerTargets);
+        void runJevTurn(state, playerView, shotHistory, playerTargets);
       } else {
-        void runPredictionOnly(history, playerTargets, playerView);
+        void runPredictionOnly(shotHistory, playerTargets, playerView);
       }
     } catch (e) {
       setStatus(
@@ -448,25 +486,38 @@ export function GameShell() {
     saveStoredPlayerShotHistory([], nextRecent);
     setGame(createNewGame());
     setPlayerView(createPlayerAttackView());
+    setDraft(emptyDraft());
+    setActiveSlot(0);
+    setOrientation("horizontal");
+    setHoverCell(null);
+    setSelected(null);
+    setScan(false);
+    setScreen("game");
+    setFocusShip(0);
     setHistory([]);
     setJevError(null);
     setIsJevThinking(false);
     setPredictionStatus("empty");
     setPredictionLabel(undefined);
     setPredictionPercent(undefined);
+    setPredictionCell(null);
     setPredictionFailed(false);
     setStatus({ code: "placeFleet" });
   };
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
+      if (game.phase !== "placement") return;
+      const target = e.target as HTMLElement | null;
+      if (target?.matches("input, textarea, select, [contenteditable]")) return;
       if (e.key === "r" || e.key === "R") {
+        e.preventDefault();
         setOrientation((o) => (o === "horizontal" ? "vertical" : "horizontal"));
       }
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, []);
+  }, [game.phase]);
 
   useEffect(() => {
     void ensurePlaySession();
@@ -479,180 +530,224 @@ export function GameShell() {
     saveStoredPlayerShotHistory([], recent);
   }, []);
 
-  useEffect(() => {
-    if (game.phase === "placement" && currentShipLength) {
-      setStatus({
-        code: "placing",
-        length: currentShipLength,
-        placed: placedCount,
-        total: FLEET_LENGTHS.length,
-      });
-    }
-  }, [game.phase, currentShipLength, placedCount]);
+  /* Derived view data ----------------------------------------------------- */
 
-  const gameOver = game.phase === "won" || game.phase === "lost";
-  const turnKind = turnKindFromState({
-    phase: game.phase,
-    turn: game.turn,
-    isJevThinking,
-  });
-  const playerRemaining =
+  const jevSunkLengths = game.opponentView.sunkShipLengths;
+  const playerSunkLengths = game.playerBoard.ships
+    .filter((ship) => ship.sunk)
+    .map((ship) => ship.length);
+  const playerAfloat =
     game.phase === "placement"
-      ? [...FLEET_LENGTHS]
-      : unsunkShipLengths(game.playerBoard);
-  const jevRemaining = unsunkShipLengths(game.jevBoard);
+      ? draftShips(draft).length
+      : unsunkShipLengths(game.playerBoard).length;
 
-  return (
-    <div className="min-h-full bg-page px-4 py-8 sm:px-6">
-      <div className="mx-auto flex w-full max-w-[96rem] flex-col gap-8">
-        <header className="flex items-start justify-between gap-3">
-          <div className="min-w-0 text-left">
-            <h1 className="text-3xl font-bold tracking-tight text-[#2c1810] sm:text-4xl">
-              <span className="text-[#dc6b5e]">ship</span>{" "}
-              <span>game</span>{" "}
-              <span className="text-[#4a9d93]">with jev</span>
-            </h1>
-            <p className="mt-1 text-sm text-[#5c4a3a]/80">
-              {t("chrome.tagline")}
-            </p>
+  const turnKind: TurnPillKind = gameOver
+    ? "complete"
+    : game.phase === "placement"
+      ? "placement"
+      : isJevThinking
+        ? "jev-thinking"
+        : "your-turn";
+
+  const playerHits = matchShots.filter((shot) => shot.outcome !== "MISS").length;
+
+  const battle = (
+    <div className="workspace">
+      <aside className="sidebar">
+        <section className="mission">
+          <div className="mission-eyebrow">
+            <span className="dot" /> {t("mission.eyebrow")}
           </div>
-          <LanguageSwitcher />
+          <h1>
+            {t("mission.titleLine1")}
+            <br />
+            {t("mission.titleLine2")}
+          </h1>
+          <p>
+            {t("mission.bodyLine1")}
+            <br />
+            {t("mission.bodyLine2")}
+          </p>
+        </section>
+
+        <JevCard
+          statusText={statusText}
+          predictionStatus={predictionStatus}
+          predictionLabel={predictionLabel}
+          predictionPercent={predictionPercent}
+          predictionError={predictionFailed ? t("prediction.error") : null}
+        />
+
+        <section className="mini-fleet">
+          <div className="mini-fleet-header">
+            <h2>{t("board.yourFleet")}</h2>
+            <span>{t("sidebar.fleetAfloat", { afloat: playerAfloat })}</span>
+            <button
+              type="button"
+              className="text-btn"
+              aria-label={t("action.fleetOverview")}
+              onClick={() => setScreen("fleet")}
+            >
+              <Icon name="arrow" />
+            </button>
+          </div>
+          <SeaBoard
+            ariaLabel={t("board.yourFleet")}
+            cellState={(row, col) => playerView.cells[row][col]}
+            ships={ownBoardShips(game.playerBoard)}
+          />
+          <FleetStrip
+            lengths={FLEET_LENGTHS}
+            sunkLengths={playerSunkLengths}
+          />
+        </section>
+
+        <div className="sidebar-bottom">
+          <Icon name="shield" />
+          <span>
+            {t("sidebar.hiddenLine1")}
+            <br />
+            {t("sidebar.hiddenLine2")}
+          </span>
+        </div>
+      </aside>
+
+      <section className="battle-main">
+        <header className="battle-heading">
+          <div>
+            <h2>{t("battle.title")}</h2>
+            <p>{t("battle.subtitle")}</p>
+          </div>
+          <TurnPill kind={turnKind} move={game.moveCount} />
         </header>
 
-        <TurnIndicator kind={turnKind} />
-
-        <p className="min-h-10 text-sm text-[#5c4a3a]/80">
-          {formatStatus(t, status)}
-        </p>
-
-        <div className="flex min-h-8 flex-wrap gap-3">
-          {game.phase === "placement" ? (
-            <>
-              <Button
-                variant="outline"
-                onClick={() =>
-                  setOrientation((o) =>
-                    o === "horizontal" ? "vertical" : "horizontal",
-                  )
-                }
-              >
-                {t("action.rotate", {
-                  orientation: t(
-                    orientation === "horizontal"
-                      ? "orientation.horizontal"
-                      : "orientation.vertical",
-                  ),
-                })}
-              </Button>
-              <Button
-                className="bg-[#e8ba3f] text-[#2c1810] hover:bg-[#d9ab30]"
-                onClick={handleAutoPlace}
-              >
-                {t("action.autoPlace")}
-              </Button>
-            </>
-          ) : null}
-        </div>
-
-        <div className="flex flex-col gap-8">
-          <div className="grid w-full min-w-0 gap-8 md:grid-cols-2">
-            <div
-              className="min-w-0"
-              onMouseLeave={() => setHoverCell(null)}
-            >
-              <GameBoard
-                title={t("board.yourFleet")}
-                subtitle={
-                  game.phase === "placement"
-                    ? t("board.yourFleet.place")
-                    : t("board.yourFleet.playing")
-                }
-                getCellVisual={playerBoardVisual}
-                showShips
-                remainingLengths={playerRemaining}
-                remainingAccent="player"
-                lastShot={game.lastJevShot}
-                lastShotBy="jev"
-                onCellClick={
-                  game.phase === "placement" ? handlePlaceClick : undefined
-                }
-                onCellHover={(row, col) => setHoverCell({ row, col })}
-                onCellLeave={() => setHoverCell(null)}
-                canClick={() => game.phase === "placement"}
+        <div className="theater">
+          <div className="theater-top">
+            <span className="sector">{t("battle.sector")}</span>
+            <label className="scan-toggle">
+              <input
+                type="checkbox"
+                checked={scan}
+                onChange={(e) => setScan(e.target.checked)}
               />
-              <p className="mt-2 min-h-4 text-xs text-[#5c4a3a]/60">
-                {game.phase === "placement" && hoverCell
-                  ? t("status.previewAt", {
-                      label: cellLabel(hoverCell.row, hoverCell.col),
-                    })
-                  : "\u00a0"}
-              </p>
-            </div>
-
-            <GameBoard
-              title={t("board.jevWaters")}
-              subtitle={
-                game.phase === "placement"
-                  ? t("board.jevWaters.locked")
-                  : game.phase === "playing" && !gameOver
-                    ? t("board.jevWaters.fire")
-                    : t("board.jevWaters.over")
-              }
-              getCellVisual={jevBoardVisual}
-              remainingLengths={jevRemaining}
-              remainingAccent="jev"
-              lastShot={game.lastPlayerShot}
-              lastShotBy="player"
-              isJevThinking={isJevThinking}
-              onCellClick={handleFire}
-              canClick={(row, col) =>
-                game.phase === "playing" &&
-                game.turn === "player" &&
-                !isJevThinking &&
-                game.opponentView.cells[row][col] === "unknown"
-              }
-            />
+              {t("battle.scanToggle")}
+            </label>
           </div>
-
-          <div className="flex w-full min-w-0 flex-col gap-4">
-            <PlayerShotPrediction
-              status={predictionStatus}
-              label={predictionLabel}
-              percent={predictionPercent}
-              error={predictionFailed ? t("prediction.error") : null}
-            />
-            <MoveJournal
-              history={history}
-              thinking={isJevThinking}
-              error={jevError ? translateEngineError(t, jevError) : null}
-            />
+          <SeaBoard
+            ariaLabel={t("board.jevWaters")}
+            cellState={(row, col) => game.opponentView.cells[row][col]}
+            ships={revealedOpponentShips(game.jevBoard)}
+            selected={selected}
+            predicted={scan ? predictionCell : null}
+            onCellActivate={handleSelect}
+            isCellEnabled={canSelect}
+            cellHint={(row, col, state) =>
+              state === "unknown"
+                ? t("cell.targetHint")
+                : t("cell.alreadyFired")
+            }
+          />
+          <div className="theater-bottom">
+            <span className="small-label">
+              {t("battle.sunkCount", { sunk: jevSunkLengths.length })}
+            </span>
+            <Legend />
           </div>
         </div>
 
-        <div className="flex min-h-9 justify-center">
-          {gameOver || game.phase === "playing" ? (
-            <Button
-              size="lg"
-              className="bg-[#e8ba3f] text-[#2c1810] hover:bg-[#d9ab30]"
-              onClick={handleNewGame}
-            >
-              {gameOver ? t("action.anotherRound") : t("action.restart")}
-            </Button>
-          ) : null}
-        </div>
+        <AttackConsole
+          selected={selected}
+          phase={game.phase}
+          jevThinking={isJevThinking}
+          onFire={handleFire}
+        />
 
-        <footer className="text-center text-xs text-[#5c4a3a]/50">
-          {t("footer.jevBy")}{" "}
-          <a
-            href="https://typesafe.ai"
-            className="text-[#4a9d93] hover:underline"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            TypeSafe
-          </a>
-        </footer>
-      </div>
+        <OperationsLog
+          history={history}
+          thinking={isJevThinking}
+          error={jevError ? translateEngineError(t, jevError) : null}
+          toast={statusText}
+        />
+      </section>
     </div>
+  );
+
+  let body: React.ReactNode;
+  if (screen === "fleet") {
+    body = (
+      <FleetScreen
+        board={game.playerBoard}
+        view={playerView}
+        focusIndex={focusShip}
+        onFocus={setFocusShip}
+        onBack={() => setScreen("game")}
+        backLabel={
+          gameOver ? t("fleetPage.backToResult") : t("fleetPage.backToBattle")
+        }
+      />
+    );
+  } else if (gameOver) {
+    body = (
+      <ResultScreen
+        won={game.phase === "won"}
+        shots={matchShots.length}
+        hits={playerHits}
+        playerBoard={game.playerBoard}
+        playerView={playerView}
+        jevSunkCount={jevSunkLengths.length}
+        onNewGame={handleNewGame}
+        onFleetReport={() => setScreen("fleet")}
+      />
+    );
+  } else if (game.phase === "placement") {
+    body = (
+      <SetupScreen
+        draft={draft}
+        activeIndex={activeSlot}
+        orientation={orientation}
+        hover={hoverCell}
+        status={statusText}
+        placementError={placementError}
+        onSelectSlot={(index) => {
+          const existing = draft[index];
+          if (existing) {
+            setOrientation(existing.orientation);
+            setDraft((prev) => prev.map((e, i) => (i === index ? null : e)));
+          }
+          setActiveSlot(index);
+          setHoverCell(null);
+        }}
+        onRotate={() =>
+          setOrientation((o) => (o === "horizontal" ? "vertical" : "horizontal"))
+        }
+        onAutoDeploy={handleAutoDeploy}
+        onClear={handleClearDraft}
+        onPlace={handlePlace}
+        onHover={(row, col) => setHoverCell({ row, col })}
+        onHoverLeave={() => setHoverCell(null)}
+        onStart={handleStartBattle}
+      />
+    );
+  } else {
+    body = battle;
+  }
+
+  const pageClass =
+    screen === "fleet"
+      ? "night fleet-page"
+      : gameOver
+        ? "night result-page"
+        : game.phase === "placement"
+          ? "night setup-page"
+          : "night";
+
+  return (
+    <main className={pageClass}>
+      <TopBar onNewGame={handleNewGame} onRules={() => setRulesOpen(true)} />
+      {body}
+      <CommunityStats />
+      <PageFooter />
+      <RulesDialog open={rulesOpen} onClose={() => setRulesOpen(false)} />
+    </main>
   );
 }

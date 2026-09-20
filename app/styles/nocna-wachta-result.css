@@ -1,0 +1,205 @@
+/* Nocna wachta — player and Jev victory screens. */
+
+/* Result screens ---------------------------------------------------------- */
+
+.night .result-screen {
+  max-width: 1350px;
+  margin: 44px auto 0;
+  display: grid;
+  grid-template-columns: 1fr 1.15fr;
+  gap: 45px;
+  align-items: center;
+  min-height: 610px;
+}
+
+.night .result-copy {
+  padding: 10px 0 20px;
+  min-width: 0;
+}
+
+.night .result-eyebrow {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  font-family: var(--font-space-grotesk), sans-serif;
+  font-weight: 500;
+  font-size: 9px;
+  letter-spacing: 1.3px;
+  color: var(--muted);
+  text-transform: uppercase;
+  flex-wrap: wrap;
+}
+
+.night .result-eyebrow .dot {
+  color: var(--accent);
+}
+
+.night .result-eyebrow > span:not(.dot) {
+  opacity: 0.5;
+  margin: 0 3px;
+}
+
+.night .result-emblem {
+  display: grid;
+  place-items: center;
+  border: 1px solid #3c5534;
+  border-radius: 16px;
+  background: #203825;
+  width: 65px;
+  height: 65px;
+  margin: 32px 0 22px;
+  color: var(--accent);
+}
+
+.night .result-emblem svg {
+  width: 34px;
+  height: 34px;
+}
+
+.night .jev-victory .result-emblem {
+  background: #302b22;
+  border-color: #514435;
+  color: var(--sj-jev-victory);
+}
+
+.night .result-screen h1 {
+  font-family: var(--font-space-grotesk), sans-serif;
+  font-weight: 500;
+  font-size: 53px;
+  line-height: 1.06;
+  letter-spacing: -2.8px;
+  margin: 0;
+}
+
+.night .result-screen h1 em {
+  font-style: normal;
+  color: var(--accent);
+}
+
+.night .jev-victory h1 em {
+  color: var(--sj-jev-victory);
+}
+
+.night .result-description {
+  font-size: 13px;
+  line-height: 1.8;
+  margin-top: 19px;
+  color: var(--muted);
+}
+
+.night .result-stats {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  margin-top: 29px;
+  max-width: 410px;
+}
+
+.night .result-stats > div {
+  border-right: 1px solid var(--line);
+  padding-left: 20px;
+}
+
+.night .result-stats > div:first-child {
+  padding-left: 0;
+}
+
+.night .result-stats > div:last-child {
+  border-right: 0;
+}
+
+.night .result-stats strong {
+  font-family: var(--font-space-grotesk), sans-serif;
+  font-weight: 500;
+  font-size: 30px;
+  letter-spacing: -1px;
+}
+
+.night .result-stats strong small {
+  font-size: 15px;
+  color: var(--muted);
+  margin-left: 2px;
+}
+
+.night .result-stats span {
+  display: block;
+  color: var(--muted);
+  font-size: 10px;
+  margin-top: 4px;
+}
+
+.night .result-actions {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  margin-top: 29px;
+  flex-wrap: wrap;
+}
+
+.night .result-actions .primary {
+  min-width: 165px;
+  padding: 15px 19px;
+}
+
+.night .result-actions .secondary {
+  padding: 14px 17px;
+}
+
+.night .result-ocean {
+  min-width: 0;
+  position: relative;
+  border: 1px solid #304635;
+  border-radius: 15px;
+  background: radial-gradient(ellipse at center, #254537, #13271f 75%);
+  padding: 21px 18px 19px;
+}
+
+.night .result-ocean .board-art {
+  margin: -8px 0 -13px;
+}
+
+.night .result-board-header {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  justify-content: space-between;
+  padding: 0 5px;
+}
+
+.night .result-board-header .eyebrow {
+  font-size: 8px;
+  color: var(--muted);
+  letter-spacing: 1px;
+}
+
+.night .result-seal {
+  font-family: var(--font-space-grotesk), sans-serif;
+  font-weight: 500;
+  font-size: 8px;
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  padding: 6px 8px;
+  color: var(--accent);
+  white-space: nowrap;
+  letter-spacing: 0.5px;
+}
+
+.night .jev-victory .result-seal {
+  color: var(--sj-jev-victory);
+}
+
+.night .result-board-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 10px;
+  padding: 0 7px;
+}
+
+.night .result-board-footer > span {
+  font-size: 10px;
+  color: var(--muted);
+}
+
+.night .result-page .community {
+  margin-top: 51px;
+}

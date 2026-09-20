@@ -1,0 +1,423 @@
+/* Nocna wachta — page chrome: top bar, workspace grid, sidebar, Jev card,
+   own-fleet card and footer. Ported from the handoff prototype `.night` rules. */
+
+/* ---------------------------------------------------------------------------
+   Nocna wachta layer. Ported from the handoff prototype `.night` rules so the
+   implementation stays pixel-faithful to mockup B.
+   --------------------------------------------------------------------------- */
+
+.night {
+  --ink: var(--sj-text);
+  --muted: var(--sj-muted);
+  --line: var(--sj-border);
+  --accent: var(--sj-accent);
+  --surface: var(--sj-surface);
+  color: var(--ink);
+  background: var(--sj-background);
+  min-height: 100vh;
+  padding: 0 38px 112px;
+  position: relative;
+}
+
+.night button:focus-visible,
+.night a:focus-visible,
+.night [tabindex]:focus-visible,
+.night .cell:focus-visible {
+  outline: 3px solid #ec9c54;
+  outline-offset: 5px;
+}
+
+.night .mono,
+.night .eyebrow,
+.night .small-label {
+  font-family: var(--font-space-grotesk), sans-serif;
+}
+
+.night .eyebrow,
+.night .small-label {
+  font-size: 11px;
+  letter-spacing: 1.8px;
+  font-weight: 600;
+  text-transform: uppercase;
+}
+
+.night .muted {
+  color: var(--muted);
+}
+
+.night .row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.night .spacer {
+  flex: 1;
+}
+
+.night .dot {
+  display: inline-block;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: currentColor;
+}
+
+.night .topbar {
+  height: 80px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-bottom: 1px solid var(--line);
+  gap: 12px;
+}
+
+.night .wordmark {
+  font-family: var(--font-space-grotesk), sans-serif;
+  letter-spacing: -1.4px;
+  font-weight: 700;
+  font-size: 25px;
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  white-space: nowrap;
+}
+
+.night .wordmark > svg {
+  width: 34px;
+  height: 34px;
+  color: var(--accent);
+}
+
+.night .word-dot {
+  color: var(--accent);
+}
+
+.night .top-nav {
+  display: flex;
+  align-items: center;
+  gap: 25px;
+  font-size: 12px;
+}
+
+.night .top-nav .status-online {
+  color: var(--accent);
+}
+
+.night .text-btn {
+  font-size: 12px;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding: 9px 0;
+  white-space: nowrap;
+}
+
+.night .text-btn svg {
+  width: 16px;
+  height: 16px;
+}
+
+.night .icon-button {
+  display: grid;
+  place-items: center;
+  width: 38px;
+  height: 38px;
+  border: 1px solid var(--line);
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.night .icon-button svg {
+  width: 19px;
+  height: 19px;
+}
+
+.night .language-switch {
+  display: flex;
+  padding: 3px;
+  background: color-mix(in srgb, var(--ink) 4%, transparent);
+  border: 1px solid var(--line);
+  border-radius: 7px;
+  gap: 2px;
+}
+
+.night .language-switch button {
+  font-family: var(--font-space-grotesk), sans-serif;
+  font-weight: 600;
+  font-size: 10px;
+  padding: 7px 9px;
+  border-radius: 4px;
+  color: var(--muted);
+  line-height: 1;
+}
+
+.night .language-switch button[aria-pressed="true"] {
+  background: var(--accent);
+  color: #17311f;
+}
+
+.night .workspace {
+  max-width: 1470px;
+  margin: auto;
+  display: grid;
+  grid-template-columns: 296px 1fr;
+  gap: 32px;
+  padding-top: 27px;
+}
+
+.night .sidebar {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  min-width: 0;
+}
+
+.night .mission-eyebrow {
+  font-family: var(--font-space-grotesk), sans-serif;
+  font-size: 10px;
+  letter-spacing: 2px;
+  color: var(--accent);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  text-transform: uppercase;
+}
+
+.night h1 {
+  font-family: var(--font-space-grotesk), sans-serif;
+  font-weight: 500;
+  font-size: 33px;
+  line-height: 1.08;
+  letter-spacing: -1.5px;
+  margin: 13px 0 9px;
+}
+
+.night .mission p {
+  font-size: 11px;
+  line-height: 1.6;
+  color: var(--muted);
+  max-width: 245px;
+}
+
+.night .jev-card {
+  background: var(--sj-jev-panel);
+  border: 1px solid #334638;
+  border-radius: var(--sj-radius-card);
+  padding: 19px;
+}
+
+.night .jev-avatar {
+  flex-shrink: 0;
+  background: var(--accent);
+  color: #1d3726;
+  width: 39px;
+  height: 39px;
+  border-radius: 9px;
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+}
+
+.night .jev-avatar svg {
+  width: 27px;
+  height: 27px;
+}
+
+.night .jev-name {
+  font-family: var(--font-space-grotesk), sans-serif;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.night .jev-sub {
+  font-family: var(--font-space-grotesk), sans-serif;
+  font-size: 9px;
+  letter-spacing: 1px;
+  color: var(--muted);
+  margin-top: 5px;
+  text-transform: uppercase;
+}
+
+.night .jev-card .quote {
+  font-size: 13px;
+  line-height: 1.7;
+  margin: 19px 0;
+  color: #c8d6cb;
+}
+
+.night .predict-line {
+  padding-top: 14px;
+  border-top: 1px solid #334638;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 10px;
+  color: var(--muted);
+}
+
+.night .predict-line > svg {
+  width: 15px;
+  height: 15px;
+  flex-shrink: 0;
+}
+
+.night .predict-line strong {
+  color: var(--accent);
+  font-family: var(--font-space-grotesk), sans-serif;
+  font-weight: 500;
+  font-size: 20px;
+  margin-left: auto;
+}
+
+.night .predict-line .predict-pending {
+  font-size: 11px;
+  margin-left: auto;
+  color: var(--muted);
+}
+
+.night .mini-fleet {
+  border: 1px solid var(--line);
+  border-radius: var(--sj-radius-card);
+  overflow: hidden;
+}
+
+.night .mini-fleet-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px 17px 0;
+  gap: 8px;
+}
+
+.night .mini-fleet-header h2 {
+  font-family: var(--font-space-grotesk), sans-serif;
+  font-weight: 500;
+  font-size: 13px;
+}
+
+.night .mini-fleet-header span {
+  font-size: 10px;
+  color: var(--muted);
+}
+
+.night .mini-fleet-header .text-btn {
+  padding: 0;
+  color: var(--accent);
+}
+
+.night .mini-fleet-header .text-btn svg {
+  width: 17px;
+  height: 17px;
+}
+
+.night .mini-fleet .board-art {
+  margin: -7px 0 -18px;
+  max-width: 270px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.night .fleet-strip {
+  display: flex;
+  gap: 5px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.night .mini-fleet .fleet-strip {
+  padding: 0 15px 15px;
+}
+
+.night .fleet-glyph {
+  display: flex;
+  gap: 2px;
+  flex-direction: column;
+  border-radius: 3px;
+  padding: 3px 2px;
+}
+
+.night .fleet-glyph i {
+  width: 8px;
+  height: 3px;
+  background: #afc7b0;
+  border-radius: 1px;
+  display: block;
+}
+
+.night .fleet-glyph.sunk {
+  opacity: 0.35;
+}
+
+.night .fleet-glyph.sunk i {
+  background: #c28270;
+}
+
+.night .fleet-count {
+  font-size: 11px;
+  margin-left: 9px;
+  color: var(--muted);
+}
+
+.night .sidebar-bottom {
+  font-size: 10px;
+  line-height: 1.7;
+  color: var(--muted);
+  display: flex;
+  gap: 9px;
+}
+
+.night .sidebar-bottom svg {
+  width: 15px;
+  height: 15px;
+  flex-shrink: 0;
+}
+
+.night dialog {
+  border: 1px solid var(--line);
+  border-radius: 18px;
+  padding: 35px;
+  max-width: 500px;
+  width: calc(100% - 34px);
+  color: var(--ink);
+  background: #14261f;
+  box-shadow: 0 20px 80px #0004;
+}
+
+.night dialog::backdrop {
+  background: #07241db0;
+  backdrop-filter: blur(5px);
+}
+
+.night .modal-close {
+  position: absolute;
+  right: 12px;
+  top: 9px;
+  font-size: 25px;
+  color: var(--muted);
+}
+
+.night dialog h2 {
+  font-family: var(--font-space-grotesk), sans-serif;
+  font-weight: 600;
+  font-size: 26px;
+  letter-spacing: -0.8px;
+  margin: 10px 0 18px;
+}
+
+.night dialog p,
+.night dialog li {
+  font-size: 13px;
+  line-height: 1.8;
+  color: var(--muted);
+}
+
+.night dialog ul {
+  padding-left: 18px;
+}
+
+.night dialog .primary {
+  margin-top: 22px;
+}
+

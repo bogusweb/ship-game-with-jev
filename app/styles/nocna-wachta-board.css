@@ -1,0 +1,83 @@
+/* Nocna wachta — board art layers, cell interaction and motion. */
+
+/* Board art ---------------------------------------------------------------- */
+
+.board-art {
+  width: 100%;
+  height: auto;
+  overflow: visible;
+  isolation: isolate;
+  display: block;
+}
+
+.board-art .cell {
+  cursor: crosshair;
+  fill: transparent;
+  stroke: transparent;
+  stroke-width: 1.4;
+}
+
+.night .board-art .cell:hover,
+.night .board-art .cell:focus {
+  fill: var(--sj-accent);
+  stroke: var(--sj-accent);
+  fill-opacity: 0.17;
+  stroke-opacity: 0.7;
+  outline: none;
+}
+
+.board-art .cell.fired {
+  cursor: default;
+  pointer-events: none;
+}
+
+.night .board-art .wave {
+  opacity: 0.3;
+}
+
+.board-art .floating {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: sj-bob 6s ease-in-out infinite;
+  pointer-events: none;
+}
+
+.board-art .floating:nth-child(even) {
+  animation-delay: -2s;
+}
+
+.board-art .target-rings {
+  animation: sj-pulse 2.8s ease-in-out infinite;
+}
+
+.board-art text {
+  user-select: none;
+}
+
+.board-art g[aria-hidden="true"] {
+  pointer-events: none;
+}
+
+.board-art .fleet-focus {
+  pointer-events: none;
+}
+
+@keyframes sj-bob {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-1.6px);
+  }
+}
+
+@keyframes sj-pulse {
+  0%,
+  100% {
+    opacity: 0.65;
+  }
+  50% {
+    opacity: 1;
+  }
+}

@@ -1,0 +1,568 @@
+/* Nocna wachta — phone breakpoints and reduced-motion, from the handoff. */
+
+@media (max-width: 800px) {
+  .night {
+    padding: 0 20px 107px;
+  }
+  .night .topbar {
+    height: 72px;
+  }
+  .night .workspace {
+    display: flex;
+    flex-direction: column;
+    padding-top: 23px;
+    gap: 22px;
+  }
+  .night .sidebar {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+    order: 2;
+  }
+  .night .mission {
+    display: none;
+  }
+  .night .battle-main {
+    order: 1;
+  }
+  .night .sidebar-bottom {
+    grid-column: 1/-1;
+  }
+  .night .jev-card {
+    padding: 16px;
+  }
+  .night .jev-card .quote {
+    font-size: 12px;
+    margin: 14px 0;
+  }
+  .night .mini-fleet .board-art {
+    margin: 0 auto;
+  }
+  .night .battle-heading {
+    margin-bottom: 17px;
+  }
+  .night .log-list {
+    grid-template-columns: 1fr 1fr 1fr;
+  }
+  .night .log-list > *:last-child:nth-child(3) {
+    display: flex;
+  }
+  .night .theater .board-art {
+    margin: 0 auto -10px;
+  }
+  .night .battle-heading h2 {
+    font-size: 23px;
+  }
+  .night .page-footer {
+    gap: 14px;
+    line-height: 1.6;
+    margin-top: 23px;
+  }
+  .night .sidebar-bottom {
+    font-size: 9px;
+  }
+  .night h1 {
+    font-size: 26px;
+  }
+  .night .top-nav .status-online {
+    display: none;
+  }
+  .night .community {
+    margin-top: 35px;
+    padding-top: 30px;
+  }
+  .night .community-heading {
+    gap: 15px;
+  }
+  .night .community h2 {
+    font-size: 23px;
+  }
+  .night .community-metrics strong {
+    font-size: 34px;
+  }
+  .night .community-metrics > div > span {
+    font-size: 10px;
+  }
+  .night .result-screen {
+    grid-template-columns: 1fr;
+    gap: 26px;
+    margin-top: 28px;
+  }
+  .night .result-copy {
+    padding: 0 5px;
+  }
+  .night .result-screen h1 {
+    font-size: 46px;
+  }
+  .night .result-emblem {
+    margin-top: 23px;
+  }
+  .night .result-ocean {
+    max-width: 570px;
+    width: 100%;
+    margin: auto;
+  }
+  .night .result-board-header {
+    flex-direction: row;
+    align-items: center;
+  }
+  .night .result-board-footer {
+    flex-direction: row;
+  }
+  .night .result-page .community {
+    margin-top: 38px;
+  }
+  .night .result-actions .primary {
+    min-width: 170px;
+  }
+  .night .fleet-intro {
+    margin-top: 26px;
+  }
+  .night .fleet-intro h1 {
+    font-size: 30px;
+  }
+  .night .fleet-workspace {
+    grid-template-columns: 1fr;
+  }
+  .night .fleet-inventory {
+    max-width: 650px;
+    width: 100%;
+    margin: auto;
+  }
+  .night .fleet-ship-list {
+    grid-template-columns: 1fr 1fr;
+    gap: 7px;
+  }
+  .night .fleet-ship-row {
+    border-color: var(--line);
+    min-height: 62px;
+  }
+  .night .fleet-map {
+    max-width: 650px;
+    width: 100%;
+    margin: auto;
+  }
+  .night .setup-workspace {
+    grid-template-columns: 1fr;
+  }
+  .night .placement-controls {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+  }
+  .night .placement-step:first-child,
+  .night .placement-roster {
+    grid-column: 1/-1;
+  }
+  .night .placement-step {
+    margin: 0;
+  }
+  .night .placement-roster {
+    grid-template-columns: repeat(5, 1fr);
+    gap: 7px;
+  }
+  .night .placement-item {
+    padding: 11px 8px;
+  }
+  .night .placement-label {
+    font-size: 9px;
+  }
+  .night .placement-label > span {
+    display: none;
+  }
+  .night .placement-step.second {
+    margin: 8px 0 0;
+  }
+  .night .rotate-button {
+    margin-top: 8px;
+  }
+  .night .placement-utilities {
+    grid-column: 1/-1;
+    margin-top: 0;
+    justify-content: flex-start;
+  }
+  .night .placement-utilities .secondary {
+    flex: 0 1 230px;
+  }
+  .night .placement-map-header {
+    flex-direction: row;
+    align-items: center;
+  }
+  .night .setup-progress {
+    padding: 12px;
+  }
+  .night .setup-progress > span {
+    max-width: 70px;
+    line-height: 1.4;
+  }
+  .night .setup-progress strong {
+    font-size: 28px;
+  }
+  .night .fleet-intro .secondary {
+    white-space: nowrap;
+    font-size: 10px;
+  }
+  .night .placement-map {
+    max-width: 650px;
+    width: 100%;
+    margin: auto;
+  }
+}
+
+@media (max-width: 450px) {
+  .night {
+    padding-left: 14px;
+    padding-right: 14px;
+  }
+  .night .top-nav {
+    gap: 8px;
+  }
+  .night .top-nav .text-btn {
+    font-size: 0;
+    gap: 0;
+    padding: 8px;
+  }
+  .night .top-nav .text-btn svg {
+    width: 17px;
+    height: 17px;
+  }
+  .night .language-switch {
+    padding: 2px;
+  }
+  .night .language-switch button {
+    padding: 7px;
+  }
+  .night .top-nav .icon-button {
+    width: 32px;
+    height: 32px;
+  }
+  .night .wordmark {
+    font-size: 23px;
+  }
+  .night .wordmark > svg {
+    width: 28px;
+  }
+  .night .battle-heading h2 {
+    font-size: 20px;
+  }
+  .night .battle-heading p {
+    font-size: 9px;
+  }
+  .night .turn-pill {
+    padding: 8px 9px;
+    gap: 7px;
+    font-size: 10px;
+  }
+  .night .turn-pill .turn-number {
+    font-size: 9px;
+  }
+  .night .turn-pill .turn-divider {
+    display: none;
+  }
+  .night .theater {
+    padding: 14px 4px 0;
+  }
+  .night .theater-top {
+    padding: 0 9px;
+  }
+  .night .sector {
+    font-size: 7px;
+    letter-spacing: 0.5px;
+  }
+  .night .scan-toggle {
+    font-size: 8px;
+    gap: 4px;
+  }
+  .night .theater .board-art {
+    margin: 4px auto 0;
+  }
+  .night .theater-bottom {
+    padding: 0 10px 15px;
+  }
+  .night .theater-bottom .small-label {
+    font-size: 8px;
+    letter-spacing: 0.5px;
+  }
+  .night .legend {
+    font-size: 8px;
+    gap: 9px;
+  }
+  .night .attack-console {
+    padding: 13px 11px;
+    gap: 9px;
+    margin-top: 12px;
+  }
+  .night .target-data {
+    gap: 10px;
+  }
+  .night .attack-coordinate {
+    font-size: 25px;
+    padding-right: 10px;
+  }
+  .night .attack-caption b {
+    font-size: 10px;
+  }
+  .night .attack-caption {
+    font-size: 8px;
+  }
+  .night .primary {
+    min-width: 121px;
+    font-size: 11px;
+    padding: 13px 10px;
+    gap: 7px;
+  }
+  .night .log-list {
+    grid-template-columns: 1fr 1fr;
+  }
+  .night .log-list > *:last-child:nth-child(3) {
+    display: none;
+  }
+  .night .log-chip {
+    font-size: 9px;
+    padding: 10px;
+  }
+  .night .sidebar {
+    grid-template-columns: 1fr;
+    gap: 16px;
+  }
+  .night .jev-card .quote {
+    font-size: 13px;
+  }
+  .night .mini-fleet .board-art {
+    max-width: 340px;
+    margin: -10px auto;
+  }
+  .night .mini-fleet .fleet-strip {
+    justify-content: center;
+    padding-bottom: 19px;
+  }
+  .night .sidebar-bottom {
+    grid-column: auto;
+  }
+  .night .page-footer {
+    font-size: 9px;
+  }
+  .night .community-heading {
+    gap: 13px;
+  }
+  .night .community-heading .eyebrow {
+    font-size: 8px;
+    margin-bottom: 9px;
+  }
+  .night .community h2 {
+    font-size: 22px;
+  }
+  .night .community-metrics {
+    grid-template-columns: 1fr 1fr;
+    row-gap: 23px;
+    margin: 27px 0 22px;
+  }
+  .night .community-metrics > div:nth-child(2) {
+    border-right: 0;
+  }
+  .night .community-metrics strong {
+    font-size: 37px;
+  }
+  .night .community-context {
+    font-size: 9px;
+    gap: 8px;
+  }
+  .night .community-note {
+    font-size: 8px;
+  }
+  .night .result-eyebrow {
+    font-size: 8px;
+    gap: 6px;
+    letter-spacing: 0.8px;
+  }
+  .night .result-screen h1 {
+    font-size: 42px;
+    letter-spacing: -2px;
+  }
+  .night .result-emblem {
+    width: 56px;
+    height: 56px;
+  }
+  .night .result-stats strong {
+    font-size: 28px;
+  }
+  .night .result-stats span {
+    font-size: 9px;
+  }
+  .night .result-stats > div {
+    padding-left: 15px;
+  }
+  .night .result-actions {
+    gap: 9px;
+  }
+  .night .result-actions .primary {
+    min-width: 145px;
+    font-size: 12px;
+    padding: 14px 16px;
+  }
+  .night .result-actions .secondary {
+    font-size: 10px;
+    padding: 14px 11px;
+  }
+  .night .result-ocean {
+    padding: 17px 8px;
+  }
+  .night .result-board-header .eyebrow {
+    font-size: 7px;
+  }
+  .night .result-seal {
+    font-size: 7px;
+    padding: 5px;
+  }
+  .night .result-board-footer > span {
+    font-size: 8px;
+  }
+  .night .fleet-intro {
+    gap: 15px;
+    margin-bottom: 22px;
+    align-items: flex-start;
+  }
+  .night .fleet-intro h1 {
+    font-size: 27px;
+    letter-spacing: -1px;
+  }
+  .night .fleet-intro .eyebrow {
+    font-size: 8px;
+  }
+  .night .fleet-intro p:not(.eyebrow) {
+    font-size: 10px;
+  }
+  .night .fleet-intro .secondary {
+    font-size: 8px;
+    padding: 10px;
+    margin-top: 5px;
+  }
+  .night .fleet-map-heading {
+    padding: 17px 17px 0;
+  }
+  .night .fleet-map-heading h2 {
+    font-size: 14px;
+  }
+  .night .fleet-map-heading .badge {
+    font-size: 9px;
+  }
+  .night .fleet-selected {
+    font-size: 9px;
+    padding: 14px;
+  }
+  .night .fleet-selected .ship-dots {
+    gap: 2px;
+  }
+  .night .fleet-selected .ship-dots i {
+    width: 5px;
+    height: 10px;
+  }
+  .night .fleet-selected > span {
+    gap: 9px;
+  }
+  .night .fleet-ship-list {
+    grid-template-columns: 1fr;
+  }
+  .night .fleet-ship-row {
+    min-height: 48px;
+  }
+  .night .ship-row-name strong {
+    font-size: 11px;
+  }
+  .night .ship-health {
+    font-size: 9px;
+  }
+  .night .fleet-summary {
+    margin-bottom: 19px;
+  }
+  .night .setup-progress {
+    padding: 10px;
+    display: block;
+    text-align: center;
+    min-width: 79px;
+    margin-top: 2px;
+  }
+  .night .setup-progress strong {
+    font-size: 28px;
+  }
+  .night .setup-progress > span {
+    display: block;
+    font-size: 8px;
+    margin-top: 3px;
+  }
+  .night .setup-progress small {
+    font-size: 12px;
+  }
+  .night .placement-roster {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 7px;
+  }
+  .night .placement-item {
+    padding: 10px 11px;
+    display: grid;
+    grid-template-columns: 1fr auto;
+    align-items: center;
+    gap: 4px;
+  }
+  .night .placement-item .placement-label {
+    font-size: 10px;
+    grid-column: 1/-1;
+  }
+  .night .placement-item .ship-dots {
+    margin: 4px 0;
+  }
+  .night .placement-item small {
+    font-size: 8px;
+  }
+  .night .placement-item .ship-dots i {
+    width: 7px;
+    height: 9px;
+  }
+  .night .placement-step p {
+    font-size: 8px;
+  }
+  .night .placement-step h2 {
+    font-size: 12px;
+  }
+  .night .placement-map-header {
+    padding: 18px 17px 0;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 5px;
+  }
+  .night .placement-map-header > span {
+    font-size: 8px;
+  }
+  .night .placement-map-footer {
+    flex-direction: column;
+    align-items: stretch;
+    padding: 14px;
+    gap: 12px;
+  }
+  .night .placement-status {
+    font-size: 9px;
+    max-width: none;
+  }
+  .night .placement-map-footer .primary {
+    font-size: 12px;
+    width: 100%;
+  }
+  .night .placement-help {
+    font-size: 8px;
+    padding: 0 14px 14px;
+  }
+  .night .placement-map .board-art {
+    margin: 0 auto -8px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .night *,
+  .night *:before,
+  .night *:after,
+  .board-art *,
+  .board-art *:before {
+    animation: none !important;
+    transition: none !important;
+  }
+}

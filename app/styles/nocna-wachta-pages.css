@@ -1,0 +1,456 @@
+/* Nocna wachta — fleet overview and fleet setup screens. */
+
+/* Fleet and setup pages --------------------------------------------------- */
+
+.night .fleet-intro {
+  max-width: 1350px;
+  margin: 32px auto 25px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 25px;
+}
+
+.night .fleet-intro .eyebrow {
+  font-size: 9px;
+  color: var(--muted);
+}
+
+.night .fleet-intro h1 {
+  font-size: 34px;
+  line-height: 1.1;
+  margin: 12px 0;
+}
+
+.night .fleet-intro p:not(.eyebrow) {
+  font-size: 11px;
+  color: var(--muted);
+  line-height: 1.6;
+}
+
+.night .fleet-workspace {
+  max-width: 1350px;
+  margin: auto;
+  display: grid;
+  grid-template-columns: 1.35fr 1fr;
+  gap: 27px;
+  align-items: start;
+}
+
+.night .fleet-map,
+.night .placement-map {
+  border: 1px solid var(--line);
+  border-radius: var(--sj-radius-board);
+  background: radial-gradient(ellipse at center, #203e32, #14271f 80%);
+  overflow: hidden;
+  min-width: 0;
+}
+
+.night .fleet-map-heading {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 20px 25px 0;
+  gap: 12px;
+}
+
+.night .fleet-map h2,
+.night .placement-map h2 {
+  font-family: var(--font-space-grotesk), sans-serif;
+  font-weight: 500;
+  font-size: 16px;
+}
+
+.night .fleet-map .board-art {
+  max-width: 650px;
+  margin: -8px auto -13px;
+}
+
+.night .fleet-selected {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 17px 24px;
+  border-top: 1px solid var(--line);
+  font-size: 12px;
+}
+
+.night .fleet-selected > span {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+}
+
+.night .fleet-selected b {
+  font-weight: 500;
+}
+
+.night .ship-dots {
+  display: inline-flex;
+  gap: 3px;
+  flex-shrink: 0;
+}
+
+.night .ship-dots i {
+  width: 7px;
+  height: 14px;
+  background: var(--accent);
+  border-radius: 2px;
+  opacity: 0.7;
+}
+
+.night .fleet-summary {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  padding: 20px 10px;
+  background: #1a2e23;
+  border: 1px solid var(--line);
+  border-radius: var(--sj-radius-card);
+  text-align: center;
+  margin-bottom: 23px;
+}
+
+.night .fleet-summary > div {
+  border-right: 1px solid var(--line);
+}
+
+.night .fleet-summary > div:last-child {
+  border: 0;
+}
+
+.night .fleet-summary strong {
+  font-family: var(--font-space-grotesk), sans-serif;
+  font-weight: 500;
+  font-size: 30px;
+  color: var(--accent);
+}
+
+.night .fleet-summary span {
+  display: block;
+  font-size: 10px;
+  color: var(--muted);
+  margin-top: 4px;
+}
+
+.night .fleet-inventory > h2 {
+  font-size: 9px;
+  color: var(--muted);
+  margin-bottom: 12px;
+}
+
+.night .fleet-ship-list {
+  display: grid;
+  gap: 5px;
+}
+
+.night .fleet-ship-row {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 12px 13px;
+  border: 1px solid transparent;
+  border-radius: 7px;
+  text-align: left;
+  min-height: 53px;
+  width: 100%;
+}
+
+.night .fleet-ship-row:hover {
+  background: color-mix(in srgb, var(--accent) 5%, transparent);
+}
+
+.night .fleet-ship-row[aria-pressed="true"] {
+  background: color-mix(in srgb, var(--accent) 9%, transparent);
+  border-color: color-mix(in srgb, var(--accent) 35%, transparent);
+}
+
+.night .ship-order {
+  font-family: var(--font-space-grotesk), sans-serif;
+  font-size: 10px;
+  color: var(--muted);
+}
+
+.night .fleet-ship-row .ship-dots {
+  width: 39px;
+  gap: 2px;
+}
+
+.night .fleet-ship-row .ship-dots i {
+  width: 6px;
+  height: 12px;
+}
+
+.night .ship-row-name {
+  flex: 1;
+  min-width: 0;
+}
+
+.night .ship-row-name strong {
+  display: block;
+  font-size: 11px;
+  font-weight: 500;
+}
+
+.night .ship-row-name small {
+  font-family: var(--font-space-grotesk), sans-serif;
+  font-weight: 400;
+  font-size: 9px;
+  display: block;
+  margin-top: 3px;
+  color: var(--muted);
+}
+
+.night .ship-health {
+  font-size: 9px;
+  color: var(--muted);
+}
+
+.night .ship-health.hit {
+  color: #d39472;
+}
+
+.night .fleet-ship-row.lost .ship-dots {
+  opacity: 0.35;
+}
+
+.night .fleet-note {
+  font-size: 10px;
+  color: var(--muted);
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  margin-top: 15px;
+}
+
+.night .fleet-note svg {
+  width: 14px;
+  height: 14px;
+  flex-shrink: 0;
+}
+
+.night .setup-progress {
+  display: flex;
+  gap: 13px;
+  align-items: center;
+  border: 1px solid var(--line);
+  border-radius: var(--sj-radius-card);
+  padding: 15px 19px;
+}
+
+.night .setup-progress strong {
+  font-family: var(--font-space-grotesk), sans-serif;
+  font-weight: 500;
+  font-size: 32px;
+  color: var(--accent);
+}
+
+.night .setup-progress small {
+  font-size: 15px;
+  color: var(--muted);
+  margin-left: 3px;
+}
+
+.night .setup-progress > span {
+  font-size: 10px;
+  color: var(--muted);
+}
+
+.night .setup-workspace {
+  max-width: 1350px;
+  margin: auto;
+  display: grid;
+  grid-template-columns: 302px 1fr;
+  gap: 28px;
+  align-items: start;
+}
+
+.night .placement-controls {
+  padding: 6px 0;
+  min-width: 0;
+}
+
+.night .placement-step {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  margin-bottom: 17px;
+}
+
+.night .step-num {
+  font-family: var(--font-space-grotesk), sans-serif;
+  font-weight: 500;
+  font-size: 10px;
+  color: var(--accent);
+  display: grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  border: 1px solid var(--line);
+  border-radius: var(--sj-radius-button);
+  flex-shrink: 0;
+}
+
+.night .placement-step h2 {
+  font-family: var(--font-space-grotesk), sans-serif;
+  font-weight: 500;
+  font-size: 14px;
+}
+
+.night .placement-step p {
+  font-size: 9px;
+  line-height: 1.5;
+  color: var(--muted);
+  margin-top: 4px;
+}
+
+.night .placement-roster {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 9px;
+}
+
+.night .placement-item {
+  padding: 13px 11px 11px;
+  text-align: left;
+  background: #15291f;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+}
+
+.night .placement-item.active {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 1px color-mix(in srgb, var(--accent) 20%, transparent);
+  background: color-mix(in srgb, var(--accent) 10%, var(--surface));
+}
+
+.night .placement-item.placed {
+  opacity: 0.65;
+}
+
+.night .placement-label {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 10px;
+  font-weight: 500;
+  gap: 5px;
+}
+
+.night .placement-label > span {
+  font-family: var(--font-space-grotesk), sans-serif;
+  font-weight: 400;
+  font-size: 8px;
+  color: var(--muted);
+}
+
+.night .placement-item .ship-dots {
+  margin: 12px 0 7px;
+  display: flex;
+}
+
+.night .placement-item .ship-dots i {
+  height: 10px;
+  width: 9px;
+}
+
+.night .placement-item small {
+  font-size: 8px;
+  color: var(--muted);
+}
+
+.night .placement-step.second {
+  margin: 24px 0 12px;
+}
+
+.night .rotate-button {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 12px 14px;
+  border: 1px solid var(--line);
+  border-radius: 7px;
+  font-size: 11px;
+}
+
+.night .rotate-button svg {
+  width: 16px;
+  height: 16px;
+}
+
+.night .rotate-button kbd {
+  margin-left: auto;
+  font-family: var(--font-space-grotesk), sans-serif;
+  font-weight: 500;
+  font-size: 10px;
+  border: 1px solid var(--line);
+  padding: 3px 6px;
+  border-radius: 3px;
+  color: var(--muted);
+}
+
+.night .placement-utilities {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-top: 12px;
+}
+
+.night .placement-utilities .secondary {
+  font-size: 10px;
+  flex: 1;
+  padding: 11px 8px;
+}
+
+.night .placement-utilities .text-btn {
+  font-size: 10px;
+  color: var(--muted);
+}
+
+.night .placement-map-header {
+  padding: 22px 24px 0;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 15px;
+}
+
+.night .placement-map-header > span {
+  font-size: 9px;
+  color: var(--muted);
+}
+
+.night .placement-map .board-art {
+  max-width: 640px;
+  margin: -7px auto -14px;
+}
+
+.night .placement-map-footer {
+  border-top: 1px solid var(--line);
+  padding: 17px 22px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px;
+}
+
+.night .placement-status {
+  font-size: 10px;
+  color: var(--muted);
+  line-height: 1.6;
+  max-width: 310px;
+}
+
+.night .placement-map-footer .primary {
+  min-width: 185px;
+  padding: 13px 17px;
+  font-size: 12px;
+}
+
+.night .placement-help {
+  font-size: 9px;
+  color: var(--muted);
+  padding: 0 22px 17px;
+}

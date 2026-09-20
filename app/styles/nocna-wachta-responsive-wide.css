@@ -1,0 +1,138 @@
+/* Nocna wachta — desktop and tablet breakpoints from the handoff. */
+
+@media (min-width: 801px) {
+  .night .theater .board-art {
+    width: min(100%, calc(100svh - 355px));
+    max-width: 610px;
+  }
+}
+
+@media (min-width: 801px) and (max-height: 850px) {
+  .night .sidebar {
+    gap: 16px;
+  }
+  .night .mission h1 {
+    font-size: 28px;
+  }
+  .night .jev-card .quote {
+    margin: 12px 0;
+    font-size: 12px;
+  }
+  .night .mini-fleet .board-art {
+    max-width: 210px;
+  }
+  .night .jev-card {
+    padding: 16px;
+  }
+  .night .mission p {
+    font-size: 10px;
+  }
+}
+
+@media (min-width: 1500px) {
+  .night .theater .board-art {
+    max-width: 930px;
+  }
+}
+
+@media (max-width: 1100px) {
+  .night {
+    padding-left: 24px;
+    padding-right: 24px;
+  }
+  .night .workspace {
+    grid-template-columns: 246px 1fr;
+    gap: 23px;
+  }
+  .night .theater .board-art {
+    margin: 0 auto -7px;
+  }
+  .night .theater-bottom {
+    padding-bottom: 17px;
+  }
+  .night .log-list {
+    grid-template-columns: 1fr 1fr;
+  }
+  .night .log-list > *:last-child:nth-child(3) {
+    display: none;
+  }
+  .night .battle-heading h2 {
+    font-size: 21px;
+  }
+  .night .turn-pill {
+    gap: 10px;
+    padding: 9px 11px;
+  }
+  .night .primary {
+    min-width: 145px;
+  }
+  .night .theater-top {
+    align-items: flex-start;
+    gap: 7px;
+  }
+  .night .sector {
+    font-size: 8px;
+  }
+  .night .scan-toggle {
+    font-size: 9px;
+  }
+  .night .attack-console {
+    gap: 12px;
+    padding: 14px;
+  }
+  .night .target-data {
+    gap: 12px;
+  }
+  .night .result-screen {
+    gap: 26px;
+  }
+  .night .result-screen h1 {
+    font-size: 44px;
+  }
+  .night .result-board-header {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 7px;
+  }
+  .night .result-board-footer {
+    flex-direction: column;
+    gap: 12px;
+  }
+  .night .community h2 {
+    font-size: 25px;
+  }
+  .night .fleet-workspace {
+    grid-template-columns: 1.2fr 1fr;
+    gap: 20px;
+  }
+  .night .setup-workspace {
+    grid-template-columns: 265px 1fr;
+    gap: 22px;
+  }
+  .night .placement-map-header {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 6px;
+  }
+  .night .placement-map-footer {
+    padding: 15px;
+    gap: 12px;
+  }
+  .night .placement-map-footer .primary {
+    min-width: 152px;
+  }
+  .night .fleet-ship-row {
+    gap: 9px;
+    padding: 10px;
+  }
+  .night .placement-status {
+    font-size: 9px;
+  }
+  .night .fleet-selected {
+    font-size: 10px;
+    padding: 15px;
+  }
+  .night .ship-health {
+    font-size: 8px;
+  }
+}

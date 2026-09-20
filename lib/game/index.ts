@@ -1,5 +1,6 @@
 export * from "./constants";
 export * from "./coords";
+export * from "./draft-fleet";
 export * from "./heatmap";
 export * from "./last-shot";
 export * from "./match-history";
