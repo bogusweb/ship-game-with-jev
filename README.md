@@ -50,8 +50,15 @@ npm run lint
 
 1. Connect this repository to Netlify.
 2. Build settings are defined in `netlify.toml` (`npm run build` + `@netlify/plugin-nextjs`).
-3. For the Jev AI proxy (later stages), set the environment variable:
-   - `SHIP_GAME_TYPESAFE_API_KEY` — server-side only; never commit or expose in client code.
+3. For the Jev AI proxy, set server-side environment variables (never commit them, never prefix with `NEXT_PUBLIC_`):
+   - `SHIP_GAME_TYPESAFE_API_KEY` — TypeSafe/Jev key. Used only in `/api/jev/shot`.
+   - `SHIP_GAME_SESSION_SECRET` — optional HMAC secret for play-session cookies. If omitted, derived from the API key.
+   - `SHIP_GAME_JEV_DAILY_BUDGET` — max paid Jev calls per UTC day (default `2000`). Extra turns fall back to the local heuristic.
+   - `SHIP_GAME_JEV_IP_HOURLY` / `SHIP_GAME_JEV_SESSION_BUDGET` — per-IP and per-browser paid caps.
+   - `SHIP_GAME_JEV_DISABLED=1` — kill switch; play continues with fallback only.
+   - `SHIP_GAME_LIVE_JEV_TESTS=1` — opt-in; `npm test` never calls TypeSafe unless this is set.
+
+The shot proxy requires a short-lived HttpOnly session cookie (`GET /api/jev/session`), rejects cross-origin calls in production, validates the board payload, and rate-limits abusive bursts. Bots and scripts that skip the game UI cannot spend the TypeSafe budget.
 
 ## Play
 
@@ -60,7 +67,7 @@ npm run lint
 3. Hits let you fire again; misses hand off to Jev.
 4. Sink all of Jev's ships to win — or lose if Jev sinks yours first.
 
-Jev uses the `/api/jev/shot` proxy. Without `SHIP_GAME_TYPESAFE_API_KEY`, a local heuristic fallback still plays.
+Jev uses the `/api/jev/shot` proxy. The API key never leaves the server. Without a key, or when cost guards trip, a local heuristic fallback still plays.
 
 ## Hunt-mode verification
 
