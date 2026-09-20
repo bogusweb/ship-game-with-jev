@@ -5,7 +5,8 @@ import { useLocale } from "@/lib/i18n";
 /**
  * Shared-waters block above the footer. The handoff numbers (3386 / 1849 /
  * 1537 / 42%) are demo data, and this build has no aggregate source, so every
- * counter shows an honest unavailable state instead of invented live results.
+ * counter and the recent-battles strip show an honest unavailable state
+ * instead of invented live results.
  */
 export function CommunityStats() {
   const { t } = useLocale();
@@ -48,6 +49,38 @@ export function CommunityStats() {
         <span>·</span>
         <span>{t("community.localOnly")}</span>
       </p>
+      <details id="recent-battles" className="community-recent" open>
+        <summary>
+          {t("community.recent")}
+          <svg viewBox="0 0 16 16" fill="none" aria-hidden="true">
+            <path
+              d="m4 6 4 4 4-4"
+              stroke="currentColor"
+              strokeWidth="1.5"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            />
+          </svg>
+        </summary>
+        <div
+          className="recent-scroll"
+          role="list"
+          aria-label={t("community.recentAria")}
+        >
+          <article className="recent-card recent-empty" role="listitem">
+            {t("community.recentEmpty")}
+          </article>
+        </div>
+      </details>
+      <div className="community-performance">
+        <span>
+          <b aria-hidden="true">—</b> {t("community.jevDecisions")}
+        </span>
+        <span className="performance-separator" />
+        <span>
+          <b aria-hidden="true">—</b> {t("community.responseTime")}
+        </span>
+      </div>
     </section>
   );
 }

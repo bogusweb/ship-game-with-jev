@@ -26,7 +26,13 @@ describe("i18n dictionaries", () => {
     const tEn = (key: MessageKey) => translate("en", key);
     const tPl = (key: MessageKey) => translate("pl", key);
     assert.equal(shipName(tEn, 4), "Cruiser");
-    assert.equal(shipName(tPl, 4), "krążownik");
+    assert.equal(shipName(tEn, 3), "Destroyer");
+    assert.equal(shipName(tEn, 2), "Corvette");
+    assert.equal(shipName(tEn, 1), "Patrol boat");
+    assert.equal(shipName(tPl, 4), "Krążownik");
+    assert.equal(shipName(tPl, 3), "Niszczyciel");
+    assert.equal(shipName(tPl, 2), "Korweta");
+    assert.equal(shipName(tPl, 1), "Patrolowiec");
     assert.equal(shipName(tPl, 99), "okręt");
   });
 

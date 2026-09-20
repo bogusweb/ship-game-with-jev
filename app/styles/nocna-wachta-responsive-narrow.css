@@ -83,6 +83,10 @@
   .night .community-metrics > div > span {
     font-size: 10px;
   }
+  .night .community-performance {
+    gap: 13px;
+    font-size: 9px;
+  }
   .night .result-screen {
     grid-template-columns: 1fr;
     gap: 26px;
@@ -383,6 +387,22 @@
   }
   .night .community-note {
     font-size: 8px;
+  }
+  .night .community-recent {
+    margin-top: 23px;
+  }
+  .night .community-recent summary {
+    font-size: 11px;
+    margin-bottom: 16px;
+  }
+  .night .recent-card {
+    flex-basis: 212px;
+    padding: 13px;
+  }
+  .night .community-performance {
+    font-size: 8px;
+    gap: 9px;
+    margin-top: 13px;
   }
   .night .result-eyebrow {
     font-size: 8px;

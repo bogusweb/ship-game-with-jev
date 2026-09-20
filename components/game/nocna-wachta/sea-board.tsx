@@ -1,9 +1,10 @@
 "use client";
 
-import { useId, type KeyboardEvent } from "react";
+import { useId, useLayoutEffect, useRef, useState, type KeyboardEvent } from "react";
 import { BOARD_SIZE } from "@/lib/game/constants";
 import { cellLabel } from "@/lib/game/coords";
 import type { Coord, Orientation, ShotCellState } from "@/lib/game";
+import { firstEnabledCell, moveRoving, ROVING_ARROWS } from "@/lib/game/roving";
 import { ShipArt, gridPoint } from "./ship-art";
 
 export type BoardShip = {
@@ -104,6 +105,17 @@ export function SeaBoard({
   const gradientId = `sea-${uid}`;
   const clipId = `sea-clip-${uid}`;
   const interactive = !!onCellActivate;
+  const enabledAt = (row: number, col: number) =>
+    isCellEnabled?.(row, col) ?? true;
+  const [cursor, setCursor] = useState<Coord>({ row: 0, col: 0 });
+  const cellRefs = useRef<(SVGRectElement | null)[][]>(
+    Array.from({ length: BOARD_SIZE }, () =>
+      Array.from({ length: BOARD_SIZE }, () => null),
+    ),
+  );
+  const focusCell = enabledAt(cursor.row, cursor.col)
+    ? cursor
+    : firstEnabledCell(enabledAt);
 
   const swell = Array.from({ length: 7 }, (_, i) => 65 + i * 97);
   const waves = Array.from({ length: 44 }, (_, i) => {
@@ -117,10 +129,39 @@ export function SeaBoard({
     row: number,
     col: number,
   ) => {
+    const delta = ROVING_ARROWS[event.key];
+    if (delta) {
+      event.preventDefault();
+      const next = moveRoving({ row, col }, delta, enabledAt);
+      setCursor(next);
+      requestAnimationFrame(() => {
+        cellRefs.current[next.row]?.[next.col]?.focus();
+      });
+      return;
+    }
     if (event.key !== "Enter" && event.key !== " ") return;
+    if (!enabledAt(row, col)) return;
     event.preventDefault();
     onCellActivate?.(row, col);
+    const remaining = (r: number, c: number) =>
+      (r !== row || c !== col) && enabledAt(r, c);
+    const next = firstEnabledCell(remaining);
+    setCursor(next);
+    requestAnimationFrame(() => {
+      cellRefs.current[next.row]?.[next.col]?.focus();
+    });
   };
+
+  useLayoutEffect(() => {
+    if (!interactive) return;
+    const active = document.activeElement;
+    const onBoard = cellRefs.current.some((row) =>
+      row.some((cell) => cell === active),
+    );
+    if (!onBoard) return;
+    const target = cellRefs.current[focusCell.row]?.[focusCell.col];
+    if (target && active !== target) target.focus();
+  });
 
   return (
     <svg
@@ -272,17 +313,27 @@ export function SeaBoard({
                   width="54"
                   height="54"
                   role="button"
-                  tabIndex={enabled ? 0 : -1}
+                  tabIndex={
+                    enabled &&
+                    focusCell.row === row &&
+                    focusCell.col === col
+                      ? 0
+                      : -1
+                  }
                   aria-label={`${cellLabel(row, col)}${hint}`}
                   aria-disabled={!enabled}
+                  ref={(node) => {
+                    cellRefs.current[row][col] = node;
+                  }}
                   onClick={enabled ? () => onCellActivate?.(row, col) : undefined}
-                  onKeyDown={
-                    enabled ? (event) => handleKey(event, row, col) : undefined
-                  }
+                  onKeyDown={(event) => handleKey(event, row, col)}
                   onMouseEnter={
                     onCellHover ? () => onCellHover(row, col) : undefined
                   }
-                  onFocus={onCellHover ? () => onCellHover(row, col) : undefined}
+                  onFocus={() => {
+                    setCursor({ row, col });
+                    onCellHover?.(row, col);
+                  }}
                 />
               );
             }),

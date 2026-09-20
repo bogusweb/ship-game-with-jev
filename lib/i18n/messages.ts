@@ -65,8 +65,8 @@ const en = {
   "fleet.lengthSunk": "Length {length}, sunk",
 
   "ship.4": "Cruiser",
-  "ship.3": "Submarine",
-  "ship.2": "Destroyer",
+  "ship.3": "Destroyer",
+  "ship.2": "Corvette",
   "ship.1": "Patrol boat",
   "ship.fallback": "ship",
 
@@ -215,6 +215,12 @@ const en = {
   "community.unavailable":
     "No shared statistics source is connected, so these counters stay empty.",
   "community.localOnly": "This build keeps match state in your browser only.",
+  "community.recent": "Recent battles",
+  "community.recentAria": "Recent battles",
+  "community.recentEmpty":
+    "No shared match history is connected, so this list stays empty.",
+  "community.jevDecisions": "Jev decisions",
+  "community.responseTime": "average response time",
 
   "result.eyebrowComplete": "Battle complete",
   "result.eyebrowWon": "Your victory",
@@ -349,10 +355,10 @@ const pl: Record<MessageKey, string> = {
   "fleet.length": "Długość {length}",
   "fleet.lengthSunk": "Długość {length}, zatopiony",
 
-  "ship.4": "krążownik",
-  "ship.3": "okręt podwodny",
-  "ship.2": "niszczyciel",
-  "ship.1": "kuter patrolowy",
+  "ship.4": "Krążownik",
+  "ship.3": "Niszczyciel",
+  "ship.2": "Korweta",
+  "ship.1": "Patrolowiec",
   "ship.fallback": "okręt",
 
   "prediction.title": "Następny strzał",
@@ -501,6 +507,12 @@ const pl: Record<MessageKey, string> = {
     "Nie podłączono wspólnego źródła statystyk, dlatego liczniki pozostają puste.",
   "community.localOnly":
     "Ta wersja trzyma stan bitwy tylko w twojej przeglądarce.",
+  "community.recent": "Ostatnie bitwy",
+  "community.recentAria": "Ostatnie bitwy",
+  "community.recentEmpty":
+    "Nie podłączono wspólnej historii bitew, dlatego ta lista pozostaje pusta.",
+  "community.jevDecisions": "decyzji Jeva",
+  "community.responseTime": "średni czas odpowiedzi",
 
   "result.eyebrowComplete": "Bitwa zakończona",
   "result.eyebrowWon": "Twoje zwycięstwo",

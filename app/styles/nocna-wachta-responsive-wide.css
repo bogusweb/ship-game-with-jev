@@ -104,6 +104,9 @@
   .night .community h2 {
     font-size: 25px;
   }
+  .night .recent-card {
+    flex-basis: 212px;
+  }
   .night .fleet-workspace {
     grid-template-columns: 1.2fr 1fr;
     gap: 20px;
