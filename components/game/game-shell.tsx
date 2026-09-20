@@ -57,7 +57,6 @@ import {
   TurnPill,
   type TurnPillKind,
 } from "./nocna-wachta/chrome";
-import { CommunityStats } from "./nocna-wachta/community-stats";
 import { FleetScreen } from "./nocna-wachta/fleet-screen";
 import { Icon } from "./nocna-wachta/icons";
 import { JevCard, type PredictionStatus } from "./nocna-wachta/jev-card";
@@ -773,7 +772,6 @@ export function GameShell() {
     <main className={pageClass}>
       <TopBar onNewGame={handleNewGame} onRules={() => setRulesOpen(true)} />
       {body}
-      <CommunityStats />
       <PageFooter />
       <RulesDialog open={rulesOpen} onClose={() => setRulesOpen(false)} />
     </main>
