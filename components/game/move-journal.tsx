@@ -4,8 +4,10 @@ import { useState } from "react";
 import { chosenShotPercent, coordEquals } from "@/lib/game/journal";
 import {
   newestFirst,
+  type HistoryOutcome,
   type MatchHistoryItem,
 } from "@/lib/game/match-history";
+import { useLocale, type Translate } from "@/lib/i18n";
 import { cn } from "@/lib/utils";
 
 type MoveJournalProps = {
@@ -15,12 +17,20 @@ type MoveJournalProps = {
   emptyMessage?: string;
 };
 
+function outcomeLabel(t: Translate, outcome: HistoryOutcome): string {
+  if (outcome === "HIT") return t("outcome.HIT");
+  if (outcome === "MISS") return t("outcome.MISS");
+  return t("outcome.SUNK");
+}
+
 export function MoveJournal({
   history,
   thinking,
   error,
-  emptyMessage = "Place your fleet to begin. Shots will land here, newest on the left.",
+  emptyMessage,
 }: MoveJournalProps) {
+  const { t } = useLocale();
+  const emptyCopy = emptyMessage ?? t("journal.empty");
   const ordered = newestFirst(history);
   const newestId = ordered[0]?.id;
   const [pinnedId, setPinnedId] = useState<string | null>(null);
@@ -42,15 +52,15 @@ export function MoveJournal({
   const banner = error
     ? error
     : thinking
-      ? "Jev is weighing the ocean…"
-      : "Move history · newest on the left.";
+      ? t("journal.thinking")
+      : t("journal.banner");
 
   return (
     <aside className="flex w-full min-w-0 flex-col gap-4 rounded-2xl bg-white/60 p-5 shadow-sm ring-1 ring-[#c8d4c0]/40">
       <div>
         <h2 className="flex items-center gap-2 text-lg font-semibold text-[#2c1810]">
           <span className="inline-block h-2.5 w-2.5 rounded-full border border-[#4a9d93]" />
-          Jev&apos;s move journal
+          {t("journal.title")}
         </h2>
         <p className="grid min-h-10 text-sm text-[#5c4a3a]/70">
           <span
@@ -63,7 +73,7 @@ export function MoveJournal({
             {banner}
           </span>
           <span className="invisible col-start-1 row-start-1" aria-hidden>
-            Place your fleet to begin. Shots will land here, newest on the left.
+            {emptyCopy}
           </span>
         </p>
       </div>
@@ -71,11 +81,11 @@ export function MoveJournal({
       <div
         className="flex min-h-[5.25rem] items-center gap-2 overflow-x-auto py-1.5"
         role="list"
-        aria-label="Move history, newest on the left"
+        aria-label={t("journal.ariaHistory")}
       >
         {ordered.length === 0 ? (
           <div role="listitem" className="flex min-h-[4.5rem] items-center">
-            <p className="text-sm text-[#5c4a3a]/70">{emptyMessage}</p>
+            <p className="text-sm text-[#5c4a3a]/70">{emptyCopy}</p>
           </div>
         ) : (
           ordered.map((item) => {
@@ -102,7 +112,7 @@ export function MoveJournal({
                   )}
                 >
                   <span className="text-[10px] font-medium uppercase tracking-wide text-[#5c4a3a]/70">
-                    {yours ? "You" : "Jev"}
+                    {yours ? t("journal.you") : t("journal.jev")}
                   </span>
                   <span className="text-sm font-semibold text-[#2c1810]">
                     {item.label}
@@ -117,7 +127,7 @@ export function MoveJournal({
                           : "text-[#2d6b64]",
                     )}
                   >
-                    {item.outcome}
+                    {outcomeLabel(t, item.outcome)}
                   </span>
                 </button>
               </div>
@@ -129,28 +139,34 @@ export function MoveJournal({
       <div className="min-h-[10.5rem]">
         {selected && selected.actor === "you" && !thinking && (
           <p className="text-sm text-[#5c4a3a]/80">
-            You fired {selected.label} — {selected.outcome}.
+            {t("journal.youFired", {
+              label: selected.label,
+              outcome: outcomeLabel(t, selected.outcome),
+            })}
           </p>
         )}
 
         {latest && selected?.actor === "jev" && !thinking && (
           <div className="space-y-3">
             <p className="text-sm text-[#5c4a3a]/80">
-              Move {latest.move} · {latest.ms} ms
-              {latest.source === "fallback" ? " · heuristic fallback" : ""}
-              {selected.outcome ? ` · ${selected.outcome}` : ""}
+              {t("journal.moveMeta", { move: latest.move, ms: latest.ms })}
+              {latest.source === "fallback" ? t("journal.fallback") : ""}
+              {selected.outcome ? ` · ${outcomeLabel(t, selected.outcome)}` : ""}
             </p>
             <p className="text-base font-medium text-[#2c1810]">
-              <span className="text-[#4a9d93]">◎</span> {latest.label} it is.
+              <span className="text-[#4a9d93]">◎</span>{" "}
+              {t("journal.chosenLine", { label: latest.label })}
             </p>
             <p className="text-sm text-[#5c4a3a]/70">
-              {chosenPercent.toFixed(1)}% shot preference
-              {latest.source === "jev" ? " from Jev" : ""}.
+              {t("journal.preference", {
+                percent: chosenPercent.toFixed(1),
+                fromJev: latest.source === "jev" ? t("journal.fromJev") : "",
+              })}
             </p>
 
             <div className="space-y-2">
               <p className="text-xs font-medium uppercase tracking-wide text-[#5c4a3a]/60">
-                Jev&apos;s shot preferences
+                {t("journal.preferencesHeading")}
               </p>
               {(expanded ? latest.probabilities : latest.probabilities.slice(0, 3)).map(
                 (p) => {
@@ -160,7 +176,7 @@ export function MoveJournal({
                       <div className="flex justify-between text-xs text-[#5c4a3a]/80">
                         <span className={isChosen ? "font-semibold text-[#2c1810]" : undefined}>
                           {p.label}
-                          {isChosen ? " · chosen" : ""}
+                          {isChosen ? t("journal.chosenMark") : ""}
                         </span>
                         <span className={isChosen ? "font-semibold text-[#2c1810]" : undefined}>
                           {p.percent.toFixed(1)}%
@@ -183,18 +199,24 @@ export function MoveJournal({
                   className="text-xs text-[#4a9d93] hover:underline"
                 >
                   {expanded
-                    ? "▲ Show fewer"
-                    : `▼ ${latest.probabilities.length - 3} more possibilities`}
+                    ? t("journal.showFewer")
+                    : t("journal.more", {
+                        count: latest.probabilities.length - 3,
+                      })}
                 </button>
               )}
               <p className="text-xs text-[#5c4a3a]/60">
-                Jev favored {latest.label} · {chosenPercent.toFixed(1)}%
+                {t("journal.favored", {
+                  label: latest.label,
+                  percent: chosenPercent.toFixed(1),
+                })}
               </p>
               {latest.confidence != null && (
                 <p className="text-xs text-[#5c4a3a]/50">
-                  Model confidence {(latest.confidence * 100).toFixed(0)}% — how
-                  peaked the distribution is, not {latest.label}&apos;s cell
-                  probability.
+                  {t("journal.confidence", {
+                    percent: (latest.confidence * 100).toFixed(0),
+                    label: latest.label,
+                  })}
                 </p>
               )}
             </div>
@@ -204,15 +226,9 @@ export function MoveJournal({
 
       <details className="text-sm text-[#5c4a3a]/70">
         <summary className="cursor-pointer text-[#4a9d93]">
-          What am I looking at?
+          {t("journal.what")}
         </summary>
-        <p className="mt-2">
-          Newest shots sit on the left. Your shots and Jev&apos;s shots share
-          this strip. Select a Jev shot to see cell preferences — percentages
-          show where Jev prefers to fire, not the chance of hitting a ship. If
-          a model-confidence figure appears, that is how peaked the
-          distribution is — not the percentage on the chosen cell&apos;s bar.
-        </p>
+        <p className="mt-2">{t("journal.explainer")}</p>
       </details>
     </aside>
   );
