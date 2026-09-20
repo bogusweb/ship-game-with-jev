@@ -1,5 +1,6 @@
 "use client";
 
+import { useSyncExternalStore } from "react";
 import { BorderBeam } from "border-beam";
 import { BOARD_SIZE } from "@/lib/game/constants";
 import { BoardCell, type CellVisual } from "./board-cell";
@@ -36,6 +37,11 @@ export function GameBoard({
   isJevThinking,
 }: GameBoardProps) {
   const cols = "ABCDEFGHIJ".split("");
+  const isClient = useSyncExternalStore(
+    () => () => {},
+    () => true,
+    () => false,
+  );
 
   const boardPanel = (
     <div
@@ -95,7 +101,7 @@ export function GameBoard({
         )}
         <FleetRemaining lengths={remainingLengths} accent={remainingAccent} />
       </div>
-      {isJevThinking === undefined ? (
+      {isJevThinking === undefined || !isClient ? (
         boardPanel
       ) : (
         <BorderBeam
