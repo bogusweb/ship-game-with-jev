@@ -386,6 +386,12 @@
 }
 
 .night dialog {
+  position: fixed;
+  inset: 0;
+  margin: auto;
+  height: fit-content;
+  max-height: min(640px, calc(100vh - 48px));
+  overflow: auto;
   border: 1px solid var(--line);
   border-radius: 18px;
   padding: 35px;
