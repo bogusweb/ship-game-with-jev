@@ -159,7 +159,7 @@ const en = {
   "rules.close": "Close",
 
   "mission.eyebrow": "Operation / Night watch",
-  "mission.titleLine1": "Calm seas.",
+  "mission.titleLine1": "Silence at sea.",
   "mission.titleLine2": "Your move.",
   "mission.bodyLine1": "He hunts for patterns.",
   "mission.bodyLine2": "You decide whether to show them.",

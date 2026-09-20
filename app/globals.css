@@ -37,7 +37,7 @@
   --sj-radius-button: 6px;
   --sj-radius-card: 10px;
   --sj-radius-board: 13px;
-  /* Mockup B layout tokens. Battle column stays 550px (Paweł). */
+  /* Paweł desktop-wide column (1440 / >1100). 801–1100 uses 246px. */
   --sj-layout-column: 550px;
   --sj-layout-sidebar: 296px;
   --sj-layout-mini-board: 270px;
