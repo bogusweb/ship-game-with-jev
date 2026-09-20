@@ -53,6 +53,10 @@ describe("TypeSafe System One payload", () => {
     assert.match(body.questions.shot?.instructions ?? "", /hunt/i);
     assert.match(body.questions.shot?.instructions ?? "", /target/i);
     assert.match(body.questions.shot?.instructions ?? "", /parity/i);
+    assert.match(body.questions.shot?.instructions ?? "", /straight/i);
+    assert.match(body.questions.shot?.instructions ?? "", /cannot bend/i);
+    assert.match(body.questions.shot?.instructions ?? "", /line ends/i);
+    assert.match(body.questions.shot?.instructions ?? "", /never shoot flanks/i);
     assert.ok(body.state.includes("Opponent board"));
     assert.match(body.state, /Remaining unsunk lengths/);
     assert.match(body.state, /Mode: HUNT/);
@@ -114,7 +118,39 @@ describe("TypeSafe System One payload", () => {
     assert.ok(["D5", "F5", "E4", "E6"].includes(keys[0] ?? ""));
     assert.match(body.state, /Mode: TARGET/);
     assert.match(body.state, /Unresolved hits: E5/);
+    assert.match(body.state, /Known axis: none/);
     assert.match(body.questions.shot?.criteria[keys[0]!] ?? "", /TARGET/);
+  });
+
+  it("omits perpendicular flanks from fire criteria once two hits lock a vertical axis", () => {
+    const view = createOpponentView();
+    view.cells[4][4] = "hit";
+    view.cells[5][4] = "hit";
+    const body = buildSystemOneBody({
+      move: 21,
+      legalMoves: legalMoves(view),
+      playerView: view,
+      playerLegalTargets: [
+        { row: 0, col: 1 },
+        { row: 0, col: 2 },
+      ],
+    });
+    const keys = Object.keys(body.questions.shot?.criteria ?? {}).sort();
+    assert.deepEqual(keys, ["E4", "E7"]);
+    assert.ok(keys.length <= 255);
+    assert.equal("options" in (body.questions.shot ?? {}), false);
+    assert.equal(body.model, "jev-latest");
+    assert.match(body.questions.shot?.instructions ?? "", /cannot bend/i);
+    assert.match(body.questions.shot?.instructions ?? "", /never shoot flanks/i);
+    assert.match(body.questions.shot?.instructions ?? "", /line ends/i);
+    assert.match(body.state, /Mode: TARGET/);
+    assert.match(body.state, /Known axis: vertical/);
+    assert.match(body.state, /Legal extend cells: E4, E7/);
+    assert.match(body.state, /Unresolved hits: E5, E6/);
+    assert.match(body.questions.shot?.criteria.E4 ?? "", /line-extend/);
+    assert.match(body.questions.shot?.criteria.E7 ?? "", /line-extend/);
+    assert.equal(body.questions.playerNextShot?.type, "choice");
+    assert.equal("options" in (body.questions.playerNextShot ?? {}), false);
   });
 });
 
@@ -231,6 +267,25 @@ describe("journal honesty", () => {
     assert.notEqual(parsed.label, "A2");
     assert.ok(["D5", "F5", "E4", "E6"].includes(parsed.label));
   });
+
+  it("refuses a flank Choice even when that cell is still unknown on the board", () => {
+    const view = createOpponentView();
+    view.cells[4][4] = "hit";
+    view.cells[5][4] = "hit";
+    const parsed = parseJevResponse(
+      { move: 22, legalMoves: legalMoves(view), playerView: view },
+      {
+        choice: "D5",
+        probabilities: { D5: 0.8, F5: 0.1, E4: 0.05, E7: 0.05 },
+      },
+      0,
+    );
+    assert.ok(["E4", "E7"].includes(parsed.label));
+    assert.equal(
+      parsed.probabilities.some((p) => p.label === "D5"),
+      false,
+    );
+  });
 });
 
 describe("player next-shot prediction parse", () => {
@@ -333,5 +388,43 @@ describe("live TypeSafe", () => {
     });
     assert.equal(response.source, "jev");
     assert.ok(["D5", "F5", "E4", "E6"].includes(response.label));
+  });
+
+  it("fires only a vertical line end after two collinear hits, still source jev", {
+    skip: !apiKey,
+  }, async () => {
+    const view = createOpponentView();
+    view.cells[4][4] = "hit";
+    view.cells[5][4] = "hit";
+    const body = buildSystemOneBody({
+      move: 17,
+      legalMoves: legalMoves(view),
+      playerView: view,
+      playerLegalTargets: [
+        { row: 0, col: 1 },
+        { row: 0, col: 2 },
+      ],
+    });
+    const keys = Object.keys(body.questions.shot?.criteria ?? {}).sort();
+    assert.deepEqual(keys, ["E4", "E7"]);
+    const response = await chooseJevShot(apiKey, {
+      move: 17,
+      legalMoves: legalMoves(view),
+      playerView: view,
+      playerLegalTargets: [
+        { row: 0, col: 1 },
+        { row: 0, col: 2 },
+      ],
+    });
+    assert.equal(response.source, "jev");
+    assert.ok(["E4", "E7"].includes(response.label));
+    assert.equal(
+      response.probabilities.some((p) =>
+        ["D5", "F5", "D6", "F6"].includes(p.label),
+      ),
+      false,
+    );
+    assert.ok(response.prediction);
+    assert.equal(response.prediction?.source, "jev");
   });
 });
