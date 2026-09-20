@@ -339,6 +339,9 @@
     grid-template-columns: 1fr;
     gap: 16px;
   }
+  .night .mini-fleet {
+    max-width: none;
+  }
   .night .jev-card .quote {
     font-size: 13px;
   }
