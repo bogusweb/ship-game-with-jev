@@ -1,10 +1,8 @@
 "use client";
 
 import { cellLabel } from "@/lib/game/coords";
-import {
-  lastShotAriaSuffix,
-  type LastShotBy,
-} from "@/lib/game/last-shot";
+import { type LastShotBy } from "@/lib/game/last-shot";
+import { useLocale } from "@/lib/i18n";
 import { cn } from "@/lib/utils";
 
 export type CellVisual =
@@ -48,6 +46,17 @@ const lastShotRing: Record<LastShotBy, string> = {
   jev: "shadow-[inset_0_0_0_2px_var(--last-jev-ring),inset_0_0_0_4px_color-mix(in_srgb,var(--last-jev)_78%,transparent)]",
 };
 
+const visualKeys: Record<CellVisual, `cell.visual.${CellVisual}`> = {
+  empty: "cell.visual.empty",
+  ship: "cell.visual.ship",
+  preview: "cell.visual.preview",
+  invalid: "cell.visual.invalid",
+  unknown: "cell.visual.unknown",
+  miss: "cell.visual.miss",
+  hit: "cell.visual.hit",
+  halo: "cell.visual.halo",
+};
+
 export function BoardCell({
   row,
   col,
@@ -59,15 +68,22 @@ export function BoardCell({
   compact,
   lastShotBy,
 }: BoardCellProps) {
+  const { t } = useLocale();
   const isShot = visual === "miss" || visual === "hit" || visual === "halo";
   const size = compact
     ? "aspect-square h-auto w-full min-h-5 max-w-[2.55rem]"
     : "aspect-square h-auto w-full min-h-6 max-w-[2.55rem] sm:min-h-7";
+  const lastShotSuffix =
+    lastShotBy === "player"
+      ? t("cell.lastShotYou")
+      : lastShotBy === "jev"
+        ? t("cell.lastShotJev")
+        : "";
 
   return (
     <button
       type="button"
-      aria-label={`${cellLabel(row, col)} ${visual}${lastShotAriaSuffix(lastShotBy)}`}
+      aria-label={`${cellLabel(row, col)} ${t(visualKeys[visual])}${lastShotSuffix}`}
       aria-current={lastShotBy ? "true" : undefined}
       disabled={disabled || (!onClick && !isShot)}
       onClick={onClick}
