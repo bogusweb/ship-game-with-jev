@@ -314,7 +314,10 @@ describe("player next-shot prediction parse", () => {
 });
 
 describe("live TypeSafe", () => {
-  const apiKey = process.env.SHIP_GAME_TYPESAFE_API_KEY;
+  const apiKey =
+    process.env.SHIP_GAME_LIVE_JEV_TESTS === "1"
+      ? process.env.SHIP_GAME_TYPESAFE_API_KEY
+      : undefined;
   it("returns source jev with chosen cell % matching the list", {
     skip: !apiKey,
   }, async () => {
