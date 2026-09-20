@@ -90,7 +90,7 @@ type StatusState =
 function formatStatus(t: Translate, status: StatusState): string {
   switch (status.code) {
     case "placeFleet":
-      return t("status.placeFleet");
+      return t("setup.statusHint");
     case "setupPlaced":
       return t("setup.statusPlaced");
     case "setupMove":
@@ -618,7 +618,7 @@ export function GameShell() {
             <h2>{t("battle.title")}</h2>
             <p>{t("battle.subtitle")}</p>
           </div>
-          <TurnPill kind={turnKind} move={game.moveCount} />
+          <TurnPill kind={turnKind} move={Math.max(1, game.moveCount)} />
         </header>
 
         <div className="theater">

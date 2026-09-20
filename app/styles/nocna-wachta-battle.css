@@ -242,9 +242,12 @@
   height: 18px;
 }
 
-.night .primary:disabled {
+.night .primary:disabled,
+.night .primary[aria-disabled="true"] {
   opacity: 0.3;
   cursor: default;
+  filter: none;
+  transform: none;
 }
 
 .night .secondary {
