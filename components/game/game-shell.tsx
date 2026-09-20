@@ -409,26 +409,30 @@ export function GameShell() {
 
         <TurnIndicator kind={turnKind} />
 
-        <p className="text-sm text-[#5c4a3a]/80">{status}</p>
+        <p className="min-h-10 text-sm text-[#5c4a3a]/80">{status}</p>
 
-        {game.phase === "placement" && (
-          <div className="flex flex-wrap gap-3">
-            <Button
-              variant="outline"
-              onClick={() =>
-                setOrientation((o) => (o === "horizontal" ? "vertical" : "horizontal"))
-              }
-            >
-              Rotate ({orientation})
-            </Button>
-            <Button
-              className="bg-[#e8ba3f] text-[#2c1810] hover:bg-[#d9ab30]"
-              onClick={handleAutoPlace}
-            >
-              Auto-place fleet
-            </Button>
-          </div>
-        )}
+        <div className="flex min-h-8 flex-wrap gap-3">
+          {game.phase === "placement" ? (
+            <>
+              <Button
+                variant="outline"
+                onClick={() =>
+                  setOrientation((o) =>
+                    o === "horizontal" ? "vertical" : "horizontal",
+                  )
+                }
+              >
+                Rotate ({orientation})
+              </Button>
+              <Button
+                className="bg-[#e8ba3f] text-[#2c1810] hover:bg-[#d9ab30]"
+                onClick={handleAutoPlace}
+              >
+                Auto-place fleet
+              </Button>
+            </>
+          ) : null}
+        </div>
 
         <div className="flex flex-col gap-8">
           <div className="grid w-full min-w-0 gap-8 md:grid-cols-2">
@@ -454,21 +458,21 @@ export function GameShell() {
                 onCellLeave={() => setHoverCell(null)}
                 canClick={() => game.phase === "placement"}
               />
-              {game.phase === "placement" && hoverCell && (
-                <p className="mt-2 text-xs text-[#5c4a3a]/60">
-                  Preview at {cellLabel(hoverCell.row, hoverCell.col)}
-                </p>
-              )}
+              <p className="mt-2 min-h-4 text-xs text-[#5c4a3a]/60">
+                {game.phase === "placement" && hoverCell
+                  ? `Preview at ${cellLabel(hoverCell.row, hoverCell.col)}`
+                  : "\u00a0"}
+              </p>
             </div>
 
             <GameBoard
               title="Jev's waters"
               subtitle={
-                game.phase === "playing" && !gameOver
-                  ? "Pick a square to fire"
-                  : game.phase === "placement"
-                    ? "Locked until your fleet is placed"
-                    : undefined
+                game.phase === "placement"
+                  ? "Locked until your fleet is placed"
+                  : game.phase === "playing" && !gameOver
+                    ? "Pick a square to fire"
+                    : "Match over"
               }
               getCellVisual={jevBoardVisual}
               remainingLengths={jevRemaining}
@@ -499,8 +503,8 @@ export function GameShell() {
           </div>
         </div>
 
-        {(gameOver || game.phase === "playing") && (
-          <div className="flex justify-center">
+        <div className="flex min-h-9 justify-center">
+          {gameOver || game.phase === "playing" ? (
             <Button
               size="lg"
               className="bg-[#e8ba3f] text-[#2c1810] hover:bg-[#d9ab30]"
@@ -508,8 +512,8 @@ export function GameShell() {
             >
               {gameOver ? "Another round" : "Restart game"}
             </Button>
-          </div>
-        )}
+          ) : null}
+        </div>
 
         <footer className="text-center text-xs text-[#5c4a3a]/50">
           Jev by{" "}
