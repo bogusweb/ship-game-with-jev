@@ -180,6 +180,7 @@ export function GameShell() {
   const [hoverCell, setHoverCell] = useState<Coord | null>(null);
 
   const [selected, setSelected] = useState<Coord | null>(null);
+  const [fireOnClick, setFireOnClick] = useState(true);
   const [scan, setScan] = useState(false);
   const [rulesOpen, setRulesOpen] = useState(false);
 
@@ -415,15 +416,7 @@ export function GameShell() {
     !isJevThinking &&
     game.opponentView.cells[row][col] === "unknown";
 
-  const handleSelect = (row: number, col: number) => {
-    if (!canSelect(row, col)) return;
-    setSelected({ row, col });
-    setStatus({ code: "targetSelected", label: cellLabel(row, col) });
-  };
-
-  const handleFire = () => {
-    if (!selected) return;
-    const { row, col } = selected;
+  const fireAt = (row: number, col: number) => {
     if (!canSelect(row, col)) return;
 
     try {
@@ -477,6 +470,21 @@ export function GameShell() {
           : { code: "invalidShot" },
       );
     }
+  };
+
+  const handleSelect = (row: number, col: number) => {
+    if (!canSelect(row, col)) return;
+    if (fireOnClick) {
+      fireAt(row, col);
+      return;
+    }
+    setSelected({ row, col });
+    setStatus({ code: "targetSelected", label: cellLabel(row, col) });
+  };
+
+  const handleFire = () => {
+    if (!selected) return;
+    fireAt(selected.row, selected.col);
   };
 
   const handleNewGame = () => {
@@ -643,7 +651,7 @@ export function GameShell() {
             isCellEnabled={canSelect}
             cellHint={(row, col, state) =>
               state === "unknown"
-                ? t("cell.targetHint")
+                ? t(fireOnClick ? "cell.fireHint" : "cell.targetHint")
                 : t("cell.alreadyFired")
             }
           />
@@ -659,6 +667,8 @@ export function GameShell() {
           selected={selected}
           phase={game.phase}
           jevThinking={isJevThinking}
+          fireOnClick={fireOnClick}
+          onFireOnClickChange={setFireOnClick}
           onFire={handleFire}
         />
 

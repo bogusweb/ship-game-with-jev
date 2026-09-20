@@ -65,7 +65,7 @@ The shot proxy keeps the API key on the server, issues a short-lived HttpOnly se
 ## Play
 
 1. Deploy your fleet on the setup screen (click to place, **R** to rotate, or **Auto-deploy fleet**). Start battle only when all ten ships are placed.
-2. On Jev’s waters, click a cell to lock the target, then **Fire**. Hits let you fire again; misses hand off to Jev.
+2. On Jev’s waters, **Fire on click** is on by default — click a cell to shoot. Turn it off to lock a target and confirm with **Fire**. Hits let you fire again; misses hand off to Jev.
 3. The left card shows Jev’s status and his predicted next cell. That cell percentage is a shot preference, not a hit chance.
 4. Sink all of Jev's ships to win — or lose if Jev sinks yours first. **New game** returns to fleet setup.
 

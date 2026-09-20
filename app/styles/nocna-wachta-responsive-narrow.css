@@ -150,7 +150,8 @@
     grid-template-columns: 1fr 1fr;
     gap: 12px;
   }
-  .night .placement-step:first-child,
+  .night .placement-auto,
+  .night .placement-step:not(.second),
   .night .placement-roster {
     grid-column: 1/-1;
   }
@@ -181,9 +182,6 @@
     margin-top: 0;
     justify-content: flex-start;
   }
-  .night .placement-utilities .secondary {
-    flex: 0 1 230px;
-  }
   .night .placement-map-header {
     flex-direction: row;
     align-items: center;
@@ -206,6 +204,9 @@
     max-width: 650px;
     width: 100%;
     margin: auto;
+  }
+  .night .placement-auto {
+    min-width: 0;
   }
 }
 
@@ -291,6 +292,19 @@
     padding: 13px 11px;
     gap: 9px;
     margin-top: 12px;
+    grid-template-columns: 1fr;
+  }
+  .night .attack-actions {
+    flex-wrap: wrap;
+    justify-content: space-between;
+    gap: 8px;
+  }
+  .night .fire-click-toggle {
+    font-size: 8px;
+    gap: 5px;
+  }
+  .night .placement-auto {
+    min-width: 0;
   }
   .night .target-data {
     gap: 10px;

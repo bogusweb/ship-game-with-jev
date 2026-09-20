@@ -19,6 +19,17 @@
   position: relative;
 }
 
+.night button:not(:disabled),
+.night summary,
+.night label {
+  cursor: pointer;
+}
+
+.night button:disabled,
+.night button[aria-disabled="true"] {
+  cursor: default;
+}
+
 .night button:focus-visible,
 .night a:focus-visible,
 .night [tabindex]:focus-visible,

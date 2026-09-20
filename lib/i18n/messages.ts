@@ -195,6 +195,10 @@ const en = {
   "attack.deployToBegin": "Deploy your fleet to begin",
   "attack.fire": "Fire",
   "attack.jevMove": "Jev's move…",
+  "attack.fireOnClick": "Fire on click",
+  "attack.clickToFire": "Click a cell to fire",
+  "attack.clickToFireDetail":
+    "Each click on Jev's waters fires immediately.",
 
   "sidebar.fleetAfloat": "{afloat} / 10 afloat",
   "sidebar.hiddenLine1": "Jev's ships stay hidden.",
@@ -277,6 +281,7 @@ const en = {
   "ship.status.sunk": "Sunk",
 
   "cell.targetHint": " — choose target",
+  "cell.fireHint": " — fire",
   "cell.alreadyFired": " — already fired",
 } as const;
 
@@ -474,6 +479,10 @@ const pl: Record<MessageKey, string> = {
   "attack.deployToBegin": "Rozstaw flotę, aby zacząć",
   "attack.fire": "Oddaj strzał",
   "attack.jevMove": "Ruch Jeva…",
+  "attack.fireOnClick": "Strzał po kliknięciu",
+  "attack.clickToFire": "Kliknij pole, by strzelić",
+  "attack.clickToFireDetail":
+    "Każde kliknięcie na wodach Jeva oddaje strzał.",
 
   "sidebar.fleetAfloat": "{afloat} / 10 na wodzie",
   "sidebar.hiddenLine1": "Statki Jeva pozostają ukryte.",
@@ -558,6 +567,7 @@ const pl: Record<MessageKey, string> = {
   "ship.status.sunk": "Zatopiony",
 
   "cell.targetHint": " — wybierz cel",
+  "cell.fireHint": " — strzał",
   "cell.alreadyFired": " — już ostrzelane",
 };
 
