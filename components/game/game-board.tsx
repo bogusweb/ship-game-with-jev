@@ -51,10 +51,10 @@ export function GameBoard({
 
   const boardPanel = (
     <div
-      className="w-full rounded-2xl bg-[#d4e4d0]/40 p-3 shadow-sm"
+      className="w-full rounded-2xl bg-board p-3 shadow-sm"
       onMouseLeave={onCellLeave}
     >
-      <div className="mb-1 grid grid-cols-[1.75rem_repeat(10,minmax(0,2.55rem))] gap-0.5 text-center text-[10px] text-[#5c4a3a]/60 sm:text-xs">
+      <div className="mb-1 grid grid-cols-[1.75rem_repeat(10,minmax(0,2.55rem))] gap-0.5 text-center text-[10px] text-ink-muted sm:text-xs">
         <span />
         {cols.map((c) => (
           <span key={c}>{c}</span>
@@ -66,7 +66,7 @@ export function GameBoard({
             key={row}
             className="grid grid-cols-[1.75rem_repeat(10,minmax(0,2.55rem))] items-stretch gap-0.5"
           >
-            <span className="flex items-center justify-center text-center text-[10px] text-[#5c4a3a]/60 sm:text-xs">
+            <span className="flex items-center justify-center text-center text-[10px] text-ink-muted sm:text-xs">
               {row + 1}
             </span>
             {Array.from({ length: BOARD_SIZE }, (_, col) => {
@@ -106,9 +106,9 @@ export function GameBoard({
   return (
     <div className="flex w-full max-w-[30rem] min-w-0 flex-col gap-3">
       <div>
-        <h2 className="text-lg font-semibold text-[#2c1810]">{title}</h2>
+        <h2 className="text-lg font-semibold text-ink">{title}</h2>
         {subtitle && (
-          <p className="text-sm text-[#5c4a3a]/70">{subtitle}</p>
+          <p className="text-sm text-ink-muted">{subtitle}</p>
         )}
         <FleetRemaining lengths={remainingLengths} accent={remainingAccent} />
       </div>

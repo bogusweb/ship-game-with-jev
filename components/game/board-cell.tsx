@@ -30,20 +30,22 @@ type BoardCellProps = {
 };
 
 const visualStyles: Record<CellVisual, string> = {
-  empty: "bg-[#f8f6ee] border-[#c8d4c0]/60 hover:bg-[#f0ede0]",
-  ship: "bg-[#dc6b5e]/85 border-[#dc6b5e]",
-  preview: "bg-[#dc6b5e]/35 border-[#dc6b5e]/70",
-  invalid: "bg-[#dc6b5e]/15 border-[#dc6b5e]/30",
-  unknown: "bg-[#f8f6ee] border-[#c8d4c0]/60 hover:bg-[#e8f0e4]",
-  miss: "bg-[#d4cfc0] border-[#b8b0a0]",
-  hit: "bg-[#4a9d93] border-[#3d8a80]",
-  halo: "bg-[#e8e4d8] border-[#d0ccc0]",
+  empty:
+    "bg-cell-empty border-cell-empty-border hover:bg-cell-empty-hover",
+  ship: "bg-cell-ship border-cell-ship-border",
+  preview: "bg-cell-ship/40 border-cell-ship/80",
+  invalid: "bg-cell-ship/18 border-cell-ship/40",
+  unknown:
+    "bg-cell-empty border-cell-empty-border hover:bg-cell-unknown-hover",
+  miss: "bg-cell-miss border-cell-miss-border",
+  hit: "bg-cell-hit border-cell-hit-border",
+  halo: "bg-cell-halo border-cell-halo-border",
 };
 
 const lastShotRing: Record<LastShotBy, string> = {
   player:
-    "shadow-[inset_0_0_0_2px_#c9a227,inset_0_0_0_4px_rgba(232,186,63,0.55)]",
-  jev: "shadow-[inset_0_0_0_2px_#b24a40,inset_0_0_0_4px_rgba(220,107,94,0.55)]",
+    "shadow-[inset_0_0_0_2px_var(--last-player-ring),inset_0_0_0_4px_color-mix(in_srgb,var(--last-player)_78%,transparent)]",
+  jev: "shadow-[inset_0_0_0_2px_var(--last-jev-ring),inset_0_0_0_4px_color-mix(in_srgb,var(--last-jev)_78%,transparent)]",
 };
 
 export function BoardCell({
@@ -76,11 +78,11 @@ export function BoardCell({
         visualStyles[visual],
         lastShotBy ? lastShotRing[lastShotBy] : null,
         onClick && !disabled && "cursor-pointer",
-        disabled && "cursor-not-allowed opacity-70",
+        disabled && "cursor-not-allowed",
       )}
     >
       {visual === "miss" && (
-        <span className="absolute inset-0 flex items-center justify-center text-[#8a8070]">
+        <span className="absolute inset-0 flex items-center justify-center text-cell-miss-mark">
           ·
         </span>
       )}
@@ -90,19 +92,19 @@ export function BoardCell({
         </span>
       )}
       {showShips && visual === "ship" && (
-        <span className="absolute inset-0 rounded-md bg-[#dc6b5e]/90" />
+        <span className="absolute inset-0 rounded-md bg-cell-ship" />
       )}
       {lastShotBy && (
         <span
           aria-hidden
           className={cn(
             "pointer-events-none absolute top-0.5 left-0.5 z-[1] h-1.5 w-1.5 rounded-full",
-            lastShotBy === "player" ? "bg-[#e8ba3f]" : "bg-[#dc6b5e]",
+            lastShotBy === "player" ? "bg-last-player" : "bg-last-jev",
           )}
         />
       )}
       {!compact && (
-        <span className="absolute right-0.5 bottom-0 text-[8px] text-[#8a8070]/50">
+        <span className="absolute right-0.5 bottom-0 text-[8px] text-ink-muted/45">
           {col + 1}
         </span>
       )}
