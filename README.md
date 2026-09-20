@@ -1,10 +1,10 @@
 # Ship Game with Jev
 
-Browser proof of concept for **Battleship vs Jev** — a warm, playful naval duel against Jev.
+Browser proof of concept for **Battleship vs Jev**. The production look is **Nocna wachta**: dark sea greens, a lime accent, and a flat top-down 10 × 10 board. Ships and water are 2D. The fleet shape is `4, 3, 3, 2, 2, 2, 1, 1, 1, 1` and ships still cannot touch, including diagonally.
 
 ## Gameplay
 
-A short playthrough (~34s): auto-place the fleet, fire on Jev’s waters, HIT and MISS, remaining unsunk ships, whose-turn badge, Jev thinking (border-beam, no orbs), and the “Jev expects …” line.
+A short playthrough (~34s): auto-place the fleet, fire on Jev’s waters, HIT and MISS, remaining unsunk ships, whose-turn badge, and the “Jev expects …” line.
 
 <video src="docs/demo.mp4" controls width="100%" preload="metadata">
   A 34-second gameplay recording is at <a href="docs/demo.mp4">docs/demo.mp4</a>.
@@ -64,10 +64,10 @@ The shot proxy keeps the API key on the server, issues a short-lived HttpOnly se
 
 ## Play
 
-1. Place your fleet on the left board (or use **Auto-place fleet**).
-2. Fire at Jev's waters on the right.
-3. Hits let you fire again; misses hand off to Jev.
-4. Sink all of Jev's ships to win — or lose if Jev sinks yours first.
+1. Deploy your fleet on the setup screen (click to place, **R** to rotate, or **Auto-deploy fleet**). Start battle only when all ten ships are placed.
+2. On Jev’s waters, click a cell to lock the target, then **Fire**. Hits let you fire again; misses hand off to Jev.
+3. The left card shows Jev’s status and his predicted next cell. That cell percentage is a shot preference, not a hit chance.
+4. Sink all of Jev's ships to win — or lose if Jev sinks yours first. **New game** returns to fleet setup.
 
 Jev uses the `/api/jev/shot` proxy. The API key never leaves the server. Without a key, or when cost guards trip, a local heuristic fallback still plays.
 

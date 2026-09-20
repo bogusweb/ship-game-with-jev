@@ -1,15 +1,50 @@
 @import "tailwindcss";
 @import "tw-animate-css";
 @import "shadcn/tailwind.css";
+@import "./styles/nocna-wachta-chrome.css";
+@import "./styles/nocna-wachta-battle.css";
+@import "./styles/nocna-wachta-board.css";
+@import "./styles/nocna-wachta-community.css";
+@import "./styles/nocna-wachta-result.css";
+@import "./styles/nocna-wachta-pages.css";
+@import "./styles/nocna-wachta-responsive-wide.css";
+@import "./styles/nocna-wachta-responsive-narrow.css";
 
 @custom-variant dark (&:is(.dark *));
+
+/* Nocna wachta — accepted design direction. Values from the handoff
+   design/tokens.css and docs/DESIGN-SPEC.md. */
+:root,
+[data-sink-theme="nightwatch"] {
+  --sj-background: #0e1c18;
+  --sj-surface: #172822;
+  --sj-jev-panel: #1a2d25;
+  --sj-action-panel: #1d3227;
+  --sj-text: #dfebe6;
+  --sj-muted: #80968d;
+  --sj-border: #2b3c36;
+  --sj-accent: #c8ed83;
+  --sj-on-accent: #16311e;
+  --sj-water-start: #285b50;
+  --sj-water-end: #173d37;
+  --sj-water-frame: #203d32;
+  --sj-target: #d5f995;
+  --sj-hit: #e79163;
+  --sj-miss: #acd1b9;
+  --sj-human-victory: #c8ed83;
+  --sj-jev-victory: #dfa684;
+
+  --sj-radius-button: 6px;
+  --sj-radius-card: 10px;
+  --sj-radius-board: 13px;
+}
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-sans);
-  --font-mono: var(--font-geist-mono);
-  --font-heading: var(--font-sans);
+  --font-sans: var(--font-dm-sans);
+  --font-mono: var(--font-space-grotesk);
+  --font-heading: var(--font-space-grotesk);
   --color-sidebar-ring: var(--sidebar-ring);
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
@@ -18,11 +53,6 @@
   --color-sidebar-primary: var(--sidebar-primary);
   --color-sidebar-foreground: var(--sidebar-foreground);
   --color-sidebar: var(--sidebar);
-  --color-chart-5: var(--chart-5);
-  --color-chart-4: var(--chart-4);
-  --color-chart-3: var(--chart-3);
-  --color-chart-2: var(--chart-2);
-  --color-chart-1: var(--chart-1);
   --color-ring: var(--ring);
   --color-input: var(--input);
   --color-border: var(--border);
@@ -44,132 +74,56 @@
   --radius-lg: var(--radius);
   --radius-xl: calc(var(--radius) * 1.4);
   --radius-2xl: calc(var(--radius) * 1.8);
-  --radius-3xl: calc(var(--radius) * 2.2);
-  --radius-4xl: calc(var(--radius) * 2.6);
 
-  --color-page: var(--page);
-  --color-ink: var(--ink);
-  --color-ink-muted: var(--ink-muted);
-  --color-board: var(--board);
-  --color-cell-empty: var(--cell-empty);
-  --color-cell-empty-border: var(--cell-empty-border);
-  --color-cell-empty-hover: var(--cell-empty-hover);
-  --color-cell-unknown-hover: var(--cell-unknown-hover);
-  --color-cell-ship: var(--cell-ship);
-  --color-cell-ship-border: var(--cell-ship-border);
-  --color-cell-miss: var(--cell-miss);
-  --color-cell-miss-border: var(--cell-miss-border);
-  --color-cell-miss-mark: var(--cell-miss-mark);
-  --color-cell-hit: var(--cell-hit);
-  --color-cell-hit-border: var(--cell-hit-border);
-  --color-cell-halo: var(--cell-halo);
-  --color-cell-halo-border: var(--cell-halo-border);
-  --color-last-player: var(--last-player);
-  --color-last-player-ring: var(--last-player-ring);
-  --color-last-jev: var(--last-jev);
-  --color-last-jev-ring: var(--last-jev-ring);
+  --color-page: var(--sj-background);
+  --color-ink: var(--sj-text);
+  --color-ink-muted: var(--sj-muted);
+  --color-accent-lime: var(--sj-accent);
+  --color-hit: var(--sj-hit);
+  --color-miss: var(--sj-miss);
+  --color-target: var(--sj-target);
 }
 
 :root {
-  /* Calm harbor: cool sage page, distinct cell states. */
-  --page: #e6eeea;
-  --ink: #1e2f2c;
-  --ink-muted: #4a5c58;
-  --board: #9eb8b2;
-  --cell-empty: #f4f8f6;
-  --cell-empty-border: #5e7a74;
-  --cell-empty-hover: #d5e4df;
-  --cell-unknown-hover: #c5dbd5;
-  --cell-ship: #c24b42;
-  --cell-ship-border: #8f322c;
-  --cell-miss: #7d8e8a;
-  --cell-miss-border: #4e5e5a;
-  --cell-miss-mark: #33413e;
-  --cell-hit: #165e5a;
-  --cell-hit-border: #0d4542;
-  --cell-halo: #c5d3d8;
-  --cell-halo-border: #6f838c;
-  --last-player: #d4a017;
-  --last-player-ring: #9a7608;
-  --last-jev: #c24b42;
-  --last-jev-ring: #7a241f;
-
-  --background: #e6eeea;
-  --foreground: #1e2f2c;
-  --card: #f4f8f6;
-  --card-foreground: #1e2f2c;
-  --popover: #f4f8f6;
-  --popover-foreground: #1e2f2c;
-  --primary: #165e5a;
-  --primary-foreground: #f4f8f6;
-  --secondary: #d5e4df;
-  --secondary-foreground: #1e2f2c;
-  --muted: #d5e4df;
-  --muted-foreground: #4a5c58;
-  --accent: #c5d3d8;
-  --accent-foreground: #1e2f2c;
-  --destructive: #c24b42;
-  --border: #c3d4cf;
-  --input: #c3d4cf;
-  --ring: #165e5a;
-  --chart-1: #c24b42;
-  --chart-2: #165e5a;
-  --chart-3: #d4a017;
-  --chart-4: #7d8e8a;
-  --chart-5: #1e2f2c;
+  --background: var(--sj-background);
+  --foreground: var(--sj-text);
+  --card: var(--sj-surface);
+  --card-foreground: var(--sj-text);
+  --popover: var(--sj-surface);
+  --popover-foreground: var(--sj-text);
+  --primary: var(--sj-accent);
+  --primary-foreground: var(--sj-on-accent);
+  --secondary: #1f3325;
+  --secondary-foreground: var(--sj-text);
+  --muted: #1f3325;
+  --muted-foreground: var(--sj-muted);
+  --accent: #1f3325;
+  --accent-foreground: var(--sj-text);
+  --destructive: var(--sj-hit);
+  --border: var(--sj-border);
+  --input: var(--sj-border);
+  --ring: var(--sj-accent);
   --radius: 0.625rem;
-  --sidebar: #f4f8f6;
-  --sidebar-foreground: #1e2f2c;
-  --sidebar-primary: #165e5a;
-  --sidebar-primary-foreground: #f4f8f6;
-  --sidebar-accent: #d5e4df;
-  --sidebar-accent-foreground: #1e2f2c;
-  --sidebar-border: #c3d4cf;
-  --sidebar-ring: #165e5a;
-}
-
-.dark {
-  --background: oklch(0.145 0 0);
-  --foreground: oklch(0.985 0 0);
-  --card: oklch(0.205 0 0);
-  --card-foreground: oklch(0.985 0 0);
-  --popover: oklch(0.205 0 0);
-  --popover-foreground: oklch(0.985 0 0);
-  --primary: oklch(0.922 0 0);
-  --primary-foreground: oklch(0.205 0 0);
-  --secondary: oklch(0.269 0 0);
-  --secondary-foreground: oklch(0.985 0 0);
-  --muted: oklch(0.269 0 0);
-  --muted-foreground: oklch(0.708 0 0);
-  --accent: oklch(0.269 0 0);
-  --accent-foreground: oklch(0.985 0 0);
-  --destructive: oklch(0.704 0.191 22.216);
-  --border: oklch(1 0 0 / 10%);
-  --input: oklch(1 0 0 / 15%);
-  --ring: oklch(0.556 0 0);
-  --chart-1: oklch(0.87 0 0);
-  --chart-2: oklch(0.556 0 0);
-  --chart-3: oklch(0.439 0 0);
-  --chart-4: oklch(0.371 0 0);
-  --chart-5: oklch(0.269 0 0);
-  --sidebar: oklch(0.205 0 0);
-  --sidebar-foreground: oklch(0.985 0 0);
-  --sidebar-primary: oklch(0.488 0.243 264.376);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.269 0 0);
-  --sidebar-accent-foreground: oklch(0.985 0 0);
-  --sidebar-border: oklch(1 0 0 / 10%);
-  --sidebar-ring: oklch(0.556 0 0);
+  --sidebar: var(--sj-surface);
+  --sidebar-foreground: var(--sj-text);
+  --sidebar-primary: var(--sj-accent);
+  --sidebar-primary-foreground: var(--sj-on-accent);
+  --sidebar-accent: #1f3325;
+  --sidebar-accent-foreground: var(--sj-text);
+  --sidebar-border: var(--sj-border);
+  --sidebar-ring: var(--sj-accent);
 }
 
 @layer base {
   * {
     @apply border-border outline-ring/50;
   }
-  body {
-    @apply bg-background text-foreground;
-  }
   html {
-    @apply font-sans;
+    background: var(--sj-background);
+  }
+  body {
+    @apply bg-page text-ink;
+    font-family: var(--font-dm-sans), sans-serif;
+    font-synthesis: none;
   }
 }
