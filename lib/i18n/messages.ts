@@ -87,6 +87,7 @@ const en = {
   "journal.banner": "Move history · newest on the left.",
   "journal.empty":
     "Place your fleet to begin. Shots will land here, newest on the left.",
+  "journal.emptyPlay": "Shots will land here, newest on the left.",
   "journal.ariaHistory": "Move history, newest on the left",
   "journal.you": "You",
   "journal.jev": "Jev",
@@ -364,6 +365,7 @@ const pl: Record<MessageKey, string> = {
   "journal.banner": "Historia ruchów · najnowsze po lewej.",
   "journal.empty":
     "Rozstaw flotę, aby zacząć. Strzały pojawią się tutaj, najnowsze po lewej.",
+  "journal.emptyPlay": "Strzały pojawią się tutaj, najnowsze po lewej.",
   "journal.ariaHistory": "Historia ruchów, najnowsze po lewej",
   "journal.you": "Ty",
   "journal.jev": "Jev",

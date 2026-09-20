@@ -65,7 +65,9 @@ export function OperationsLog({
       <div className="log-list" role="list" aria-label={t("journal.ariaHistory")}>
         {ordered.length === 0 ? (
           <div role="listitem" className="log-chip">
-            <span>{t("journal.empty")}</span>
+            <span>
+              {thinking ? t("journal.thinking") : t("journal.emptyPlay")}
+            </span>
           </div>
         ) : (
           ordered.slice(0, 3).map((item) => (
