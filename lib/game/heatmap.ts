@@ -3,6 +3,7 @@ import { cellLabel, getShipCells, isInBounds } from "./coords";
 import type { Coord, OpponentView } from "./types";
 
 export type HuntMode = "HUNT" | "TARGET";
+export type KnownAxis = "horizontal" | "vertical";
 
 export type ShotCellScore = {
   cell: Coord;
@@ -12,6 +13,16 @@ export type ShotCellScore = {
   parity: boolean;
   rank: number;
   reason: string;
+};
+
+/** A collinear cluster of unresolved hits with a known ship axis. */
+export type AxisLock = {
+  axis: KnownAxis;
+  hits: Coord[];
+  /** Unknown cells on the line: the two ends plus any gaps. */
+  extend: Coord[];
+  /** Perpendicular unknown neighbors — still unknown on the board, not offered. */
+  flanks: Coord[];
 };
 
 const ORTHO: Coord[] = [
@@ -49,6 +60,165 @@ export function unresolvedHits(view: OpponentView): Coord[] {
     }
   }
   return hits;
+}
+
+function coordKey(cell: Coord): string {
+  return `${cell.row},${cell.col}`;
+}
+
+function uniqueCoords(cells: Coord[]): Coord[] {
+  const seen = new Set<string>();
+  const out: Coord[] = [];
+  for (const cell of cells) {
+    const key = coordKey(cell);
+    if (seen.has(key)) continue;
+    seen.add(key);
+    out.push(cell);
+  }
+  return out;
+}
+
+function unknownAt(view: OpponentView, row: number, col: number): boolean {
+  return isInBounds(row, col) && view.cells[row][col] === "unknown";
+}
+
+/**
+ * 2+ unresolved hits on the same row or column lock that axis.
+ * Ships cannot bend, so perpendicular flanks cannot be ship.
+ */
+export function knownAxisLocks(view: OpponentView): AxisLock[] {
+  const hits = unresolvedHits(view);
+  const locks: AxisLock[] = [];
+
+  const byRow = new Map<number, Coord[]>();
+  const byCol = new Map<number, Coord[]>();
+  for (const hit of hits) {
+    const rowGroup = byRow.get(hit.row) ?? [];
+    rowGroup.push(hit);
+    byRow.set(hit.row, rowGroup);
+    const colGroup = byCol.get(hit.col) ?? [];
+    colGroup.push(hit);
+    byCol.set(hit.col, colGroup);
+  }
+
+  for (const [row, group] of byRow) {
+    if (group.length < 2) continue;
+    const cols = group.map((h) => h.col).sort((a, b) => a - b);
+    const minC = cols[0]!;
+    const maxC = cols[cols.length - 1]!;
+    const extend: Coord[] = [];
+    for (const col of [minC - 1, maxC + 1]) {
+      if (unknownAt(view, row, col)) extend.push({ row, col });
+    }
+    for (let col = minC + 1; col < maxC; col++) {
+      if (unknownAt(view, row, col)) extend.push({ row, col });
+    }
+    const flanks: Coord[] = [];
+    for (const hit of group) {
+      for (const dr of [-1, 1]) {
+        const r = hit.row + dr;
+        if (unknownAt(view, r, hit.col)) flanks.push({ row: r, col: hit.col });
+      }
+    }
+    locks.push({
+      axis: "horizontal",
+      hits: group,
+      extend: uniqueCoords(extend),
+      flanks: uniqueCoords(flanks),
+    });
+  }
+
+  for (const [col, group] of byCol) {
+    if (group.length < 2) continue;
+    const rows = group.map((h) => h.row).sort((a, b) => a - b);
+    const minR = rows[0]!;
+    const maxR = rows[rows.length - 1]!;
+    const extend: Coord[] = [];
+    for (const row of [minR - 1, maxR + 1]) {
+      if (unknownAt(view, row, col)) extend.push({ row, col });
+    }
+    for (let row = minR + 1; row < maxR; row++) {
+      if (unknownAt(view, row, col)) extend.push({ row, col });
+    }
+    const flanks: Coord[] = [];
+    for (const hit of group) {
+      for (const dc of [-1, 1]) {
+        const c = hit.col + dc;
+        if (unknownAt(view, hit.row, c)) flanks.push({ row: hit.row, col: c });
+      }
+    }
+    locks.push({
+      axis: "vertical",
+      hits: group,
+      extend: uniqueCoords(extend),
+      flanks: uniqueCoords(flanks),
+    });
+  }
+
+  return locks;
+}
+
+export function describeAxisLock(view: OpponentView): {
+  axisLine: string;
+  extendLine: string;
+} {
+  const locks = knownAxisLocks(view);
+  if (locks.length === 0) {
+    return {
+      axisLine: "Known axis: none",
+      extendLine: "Legal extend cells: none",
+    };
+  }
+  const axes = [...new Set(locks.map((lock) => lock.axis))];
+  const extend = uniqueCoords(locks.flatMap((lock) => lock.extend)).map((cell) =>
+    cellLabel(cell.row, cell.col),
+  );
+  return {
+    axisLine: `Known axis: ${axes.join(", ")}`,
+    extendLine: `Legal extend cells: ${extend.length > 0 ? extend.join(", ") : "none"}`,
+  };
+}
+
+/**
+ * Cells offered in the fire Choice. When an axis is known, flanks stay
+ * unknown on the board but are not in `criteria`. Isolated single-hit
+ * neighbors remain offered. Hunt (no lock) still offers every legal move.
+ */
+export function offeredFireCells(
+  view: OpponentView,
+  legalMoves: Coord[],
+): Coord[] {
+  const legalKeys = new Set(legalMoves.map(coordKey));
+  const isLegal = (cell: Coord) => legalKeys.has(coordKey(cell));
+  const locks = knownAxisLocks(view);
+  if (locks.length === 0) return legalMoves;
+
+  const flankKeys = new Set(
+    locks.flatMap((lock) => lock.flanks.map(coordKey)),
+  );
+  const extend = uniqueCoords(locks.flatMap((lock) => lock.extend)).filter(
+    isLegal,
+  );
+
+  const lockedHitKeys = new Set(
+    locks.flatMap((lock) => lock.hits.map(coordKey)),
+  );
+  const isolatedNeighbors: Coord[] = [];
+  for (const hit of unresolvedHits(view)) {
+    if (lockedHitKeys.has(coordKey(hit))) continue;
+    for (const { row: dr, col: dc } of ORTHO) {
+      const row = hit.row + dr;
+      const col = hit.col + dc;
+      const cell = { row, col };
+      if (!unknownAt(view, row, col) || !isLegal(cell)) continue;
+      if (flankKeys.has(coordKey(cell))) continue;
+      isolatedNeighbors.push(cell);
+    }
+  }
+
+  const offered = uniqueCoords([...extend, ...isolatedNeighbors]);
+  if (offered.length > 0) return offered;
+  return legalMoves.filter((cell) => !flankKeys.has(coordKey(cell)));
 }
 
 function placementFits(

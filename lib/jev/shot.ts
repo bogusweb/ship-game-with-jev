@@ -9,6 +9,7 @@ import {
 } from "@/lib/game/journal";
 import {
   describeShotCriterion,
+  offeredFireCells,
   scoreLegalShots,
 } from "@/lib/game/heatmap";
 import {
@@ -115,11 +116,19 @@ export function capChoiceCoords(
   return cells.slice(0, max);
 }
 
+export function fireChoiceMoves(
+  playerView: OpponentView,
+  legalMoves: Coord[],
+): Coord[] {
+  return offeredFireCells(playerView, legalMoves);
+}
+
 export function buildJevQuestions(
   legalMoves: Coord[],
   playerView: OpponentView,
 ) {
-  const scores = scoreLegalShots(playerView, legalMoves).slice(
+  const offered = fireChoiceMoves(playerView, legalMoves);
+  const scores = scoreLegalShots(playerView, offered).slice(
     0,
     MAX_CHOICE_CRITERIA,
   );
@@ -156,7 +165,11 @@ export function buildPlayerNextShotQuestion(
 
 export function buildSystemOneBody(request: JevShotRequest): SystemOneRequestBody {
   const questions: SystemOneRequestBody["questions"] = {};
-  if ((request.legalMoves?.length ?? 0) >= 2) {
+  const offered = fireChoiceMoves(
+    request.playerView,
+    request.legalMoves ?? [],
+  );
+  if (offered.length >= 2) {
     questions.shot = buildJevQuestions(
       request.legalMoves,
       request.playerView,
@@ -211,7 +224,9 @@ export function fallbackShot(
   startMs: number,
 ): JevShotResponse {
   const { legalMoves, playerView } = request;
-  const scores = scoreLegalShots(playerView, legalMoves);
+  const offered = fireChoiceMoves(playerView, legalMoves);
+  const moves = offered.length > 0 ? offered : legalMoves;
+  const scores = scoreLegalShots(playerView, moves);
   const legalKeys = scores.map((s) => s.label);
   const probMap: Record<string, number> = {};
   const total = scores.reduce((sum, s) => sum + Math.max(1, s.heat), 0);
@@ -219,7 +234,7 @@ export function fallbackShot(
     probMap[score.label] = (Math.max(1, score.heat) / total) * 100;
   }
 
-  const chosenKey = legalKeys[0] ?? coordToKey(legalMoves[0]!);
+  const chosenKey = legalKeys[0] ?? coordToKey(moves[0] ?? legalMoves[0]!);
   return finishResponse(
     chosenKey,
     preferencesFromMap(legalKeys, probMap),
@@ -233,7 +248,10 @@ export function parseJevResponse(
   answer: ChoiceAnswer,
   startMs: number,
 ): JevShotResponse {
-  const legalKeys = request.legalMoves.map(coordToKey);
+  const offered = fireChoiceMoves(request.playerView, request.legalMoves);
+  const legalKeys = (offered.length > 0 ? offered : request.legalMoves).map(
+    coordToKey,
+  );
   const chosenKey = legalKeys.includes(answer.choice)
     ? answer.choice
     : sampleChoice(answer.probabilities, legalKeys);
@@ -386,9 +404,14 @@ export async function chooseJevShot(
   request: JevShotRequest,
 ): Promise<JevShotResponse> {
   const start = performance.now();
-  if (request.legalMoves.length === 1) {
+  const offered = fireChoiceMoves(request.playerView, request.legalMoves);
+  if (request.legalMoves.length === 1 || offered.length <= 1) {
+    const single =
+      offered.length === 1
+        ? { ...request, legalMoves: offered }
+        : request;
     return attachPrediction(
-      fallbackShot(request, start),
+      fallbackShot(single, start),
       null,
       request.playerLegalTargets?.length ? PREDICTION_UNAVAILABLE : null,
     );
