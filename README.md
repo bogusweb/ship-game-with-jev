@@ -2,6 +2,16 @@
 
 Browser proof of concept for **Battleship vs Jev** — a warm, playful naval duel against Jev.
 
+## Gameplay
+
+A short playthrough (~34s): auto-place the fleet, fire on Jev’s waters, HIT and MISS, remaining unsunk ships, whose-turn badge, Jev thinking (border-beam, no orbs), and the “Jev expects …” line.
+
+<video src="docs/demo.mp4" controls width="100%" preload="metadata">
+  A 34-second gameplay recording is at <a href="docs/demo.mp4">docs/demo.mp4</a>.
+</video>
+
+The same recording lives at [`docs/demo.mp4`](docs/demo.mp4). After a clone, open that file or this page on GitHub.
+
 ## Stack
 
 - [Next.js](https://nextjs.org/) (App Router) + TypeScript
