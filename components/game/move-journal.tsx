@@ -39,6 +39,12 @@ export function MoveJournal({
       chosenShotPercent(latest.chosen, latest.probabilities))
     : 0;
 
+  const banner = error
+    ? error
+    : thinking
+      ? "Jev is weighing the ocean…"
+      : "Move history · newest on the left.";
+
   return (
     <aside className="flex w-full min-w-0 flex-col gap-4 rounded-2xl bg-white/60 p-5 shadow-sm ring-1 ring-[#c8d4c0]/40">
       <div>
@@ -46,34 +52,33 @@ export function MoveJournal({
           <span className="inline-block h-2.5 w-2.5 rounded-full border border-[#4a9d93]" />
           Jev&apos;s move journal
         </h2>
-        <p className="text-sm text-[#5c4a3a]/70">
-          Move history · newest on the left.
+        <p className="grid min-h-10 text-sm text-[#5c4a3a]/70">
+          <span
+            className={cn(
+              "col-start-1 row-start-1 line-clamp-2",
+              error && "text-[#8b3a30]",
+              thinking && !error && "text-[#5c4a3a]/80",
+            )}
+          >
+            {banner}
+          </span>
+          <span className="invisible col-start-1 row-start-1" aria-hidden>
+            Place your fleet to begin. Shots will land here, newest on the left.
+          </span>
         </p>
       </div>
 
-      {error && (
-        <div className="rounded-lg bg-[#dc6b5e]/10 px-3 py-2 text-sm text-[#8b3a30]">
-          {error}
-        </div>
-      )}
-
-      {thinking && (
-        <div className="rounded-lg bg-[#f0ede0] px-3 py-4 text-sm text-[#5c4a3a]/80">
-          Jev is weighing the ocean…
-        </div>
-      )}
-
-      {!thinking && !error && history.length === 0 && (
-        <p className="text-sm text-[#5c4a3a]/70">{emptyMessage}</p>
-      )}
-
-      {ordered.length > 0 && (
-        <div
-          className="flex gap-2 overflow-x-auto pb-1"
-          role="list"
-          aria-label="Move history, newest on the left"
-        >
-          {ordered.map((item) => {
+      <div
+        className="flex min-h-[4.75rem] gap-2 overflow-x-auto pb-1"
+        role="list"
+        aria-label="Move history, newest on the left"
+      >
+        {ordered.length === 0 ? (
+          <div role="listitem" className="flex min-h-[4.75rem] items-center">
+            <p className="text-sm text-[#5c4a3a]/70">{emptyMessage}</p>
+          </div>
+        ) : (
+          ordered.map((item) => {
             const isSelected = selected?.id === item.id;
             const yours = item.actor === "you";
             return (
@@ -86,7 +91,7 @@ export function MoveJournal({
                   }}
                   aria-pressed={isSelected}
                   className={cn(
-                    "flex min-w-[7.5rem] flex-col gap-0.5 rounded-xl px-3 py-2 text-left ring-1 transition-colors",
+                    "flex min-h-[4.5rem] min-w-[7.5rem] flex-col gap-0.5 rounded-xl px-3 py-2 text-left ring-1 transition-colors",
                     yours
                       ? "bg-[#dc6b5e]/10 ring-[#dc6b5e]/25"
                       : "bg-[#4a9d93]/10 ring-[#4a9d93]/25",
@@ -117,83 +122,85 @@ export function MoveJournal({
                 </button>
               </div>
             );
-          })}
-        </div>
-      )}
+          })
+        )}
+      </div>
 
-      {selected && selected.actor === "you" && !thinking && (
-        <p className="text-sm text-[#5c4a3a]/80">
-          You fired {selected.label} — {selected.outcome}.
-        </p>
-      )}
-
-      {latest && selected?.actor === "jev" && !thinking && (
-        <div className="space-y-3">
+      <div className="min-h-[10.5rem]">
+        {selected && selected.actor === "you" && !thinking && (
           <p className="text-sm text-[#5c4a3a]/80">
-            Move {latest.move} · {latest.ms} ms
-            {latest.source === "fallback" ? " · heuristic fallback" : ""}
-            {selected.outcome ? ` · ${selected.outcome}` : ""}
+            You fired {selected.label} — {selected.outcome}.
           </p>
-          <p className="text-base font-medium text-[#2c1810]">
-            <span className="text-[#4a9d93]">◎</span> {latest.label} it is.
-          </p>
-          <p className="text-sm text-[#5c4a3a]/70">
-            {chosenPercent.toFixed(1)}% shot preference
-            {latest.source === "jev" ? " from Jev" : ""}.
-          </p>
+        )}
 
-          <div className="space-y-2">
-            <p className="text-xs font-medium uppercase tracking-wide text-[#5c4a3a]/60">
-              Jev&apos;s shot preferences
+        {latest && selected?.actor === "jev" && !thinking && (
+          <div className="space-y-3">
+            <p className="text-sm text-[#5c4a3a]/80">
+              Move {latest.move} · {latest.ms} ms
+              {latest.source === "fallback" ? " · heuristic fallback" : ""}
+              {selected.outcome ? ` · ${selected.outcome}` : ""}
             </p>
-            {(expanded ? latest.probabilities : latest.probabilities.slice(0, 3)).map(
-              (p) => {
-                const isChosen = coordEquals(p.cell, latest.chosen);
-                return (
-                  <div key={`${p.cell.row}-${p.cell.col}`} className="space-y-1">
-                    <div className="flex justify-between text-xs text-[#5c4a3a]/80">
-                      <span className={isChosen ? "font-semibold text-[#2c1810]" : undefined}>
-                        {p.label}
-                        {isChosen ? " · chosen" : ""}
-                      </span>
-                      <span className={isChosen ? "font-semibold text-[#2c1810]" : undefined}>
-                        {p.percent.toFixed(1)}%
-                      </span>
-                    </div>
-                    <div className="h-1.5 overflow-hidden rounded-full bg-[#e8e4d8]">
-                      <div
-                        className="h-full rounded-full bg-[#4a9d93]"
-                        style={{ width: `${Math.min(100, p.percent)}%` }}
-                      />
-                    </div>
-                  </div>
-                );
-              },
-            )}
-            {latest.probabilities.length > 3 && (
-              <button
-                type="button"
-                onClick={() => setExpanded(!expanded)}
-                className="text-xs text-[#4a9d93] hover:underline"
-              >
-                {expanded
-                  ? "▲ Show fewer"
-                  : `▼ ${latest.probabilities.length - 3} more possibilities`}
-              </button>
-            )}
-            <p className="text-xs text-[#5c4a3a]/60">
-              Jev favored {latest.label} · {chosenPercent.toFixed(1)}%
+            <p className="text-base font-medium text-[#2c1810]">
+              <span className="text-[#4a9d93]">◎</span> {latest.label} it is.
             </p>
-            {latest.confidence != null && (
-              <p className="text-xs text-[#5c4a3a]/50">
-                Model confidence {(latest.confidence * 100).toFixed(0)}% — how
-                peaked the distribution is, not {latest.label}&apos;s cell
-                probability.
+            <p className="text-sm text-[#5c4a3a]/70">
+              {chosenPercent.toFixed(1)}% shot preference
+              {latest.source === "jev" ? " from Jev" : ""}.
+            </p>
+
+            <div className="space-y-2">
+              <p className="text-xs font-medium uppercase tracking-wide text-[#5c4a3a]/60">
+                Jev&apos;s shot preferences
               </p>
-            )}
+              {(expanded ? latest.probabilities : latest.probabilities.slice(0, 3)).map(
+                (p) => {
+                  const isChosen = coordEquals(p.cell, latest.chosen);
+                  return (
+                    <div key={`${p.cell.row}-${p.cell.col}`} className="space-y-1">
+                      <div className="flex justify-between text-xs text-[#5c4a3a]/80">
+                        <span className={isChosen ? "font-semibold text-[#2c1810]" : undefined}>
+                          {p.label}
+                          {isChosen ? " · chosen" : ""}
+                        </span>
+                        <span className={isChosen ? "font-semibold text-[#2c1810]" : undefined}>
+                          {p.percent.toFixed(1)}%
+                        </span>
+                      </div>
+                      <div className="h-1.5 overflow-hidden rounded-full bg-[#e8e4d8]">
+                        <div
+                          className="h-full rounded-full bg-[#4a9d93]"
+                          style={{ width: `${Math.min(100, p.percent)}%` }}
+                        />
+                      </div>
+                    </div>
+                  );
+                },
+              )}
+              {latest.probabilities.length > 3 && (
+                <button
+                  type="button"
+                  onClick={() => setExpanded(!expanded)}
+                  className="text-xs text-[#4a9d93] hover:underline"
+                >
+                  {expanded
+                    ? "▲ Show fewer"
+                    : `▼ ${latest.probabilities.length - 3} more possibilities`}
+                </button>
+              )}
+              <p className="text-xs text-[#5c4a3a]/60">
+                Jev favored {latest.label} · {chosenPercent.toFixed(1)}%
+              </p>
+              {latest.confidence != null && (
+                <p className="text-xs text-[#5c4a3a]/50">
+                  Model confidence {(latest.confidence * 100).toFixed(0)}% — how
+                  peaked the distribution is, not {latest.label}&apos;s cell
+                  probability.
+                </p>
+              )}
+            </div>
           </div>
-        </div>
-      )}
+        )}
+      </div>
 
       <details className="text-sm text-[#5c4a3a]/70">
         <summary className="cursor-pointer text-[#4a9d93]">
