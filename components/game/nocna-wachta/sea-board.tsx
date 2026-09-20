@@ -139,7 +139,7 @@ export function SeaBoard({
       const next = moveRoving({ row, col }, delta, enabledAt);
       setCursor(next);
       requestAnimationFrame(() => {
-        cellRefs.current[next.row]?.[next.col]?.focus();
+        cellRefs.current[next.row]?.[next.col]?.focus({ preventScroll: true });
       });
       return;
     }
@@ -152,7 +152,7 @@ export function SeaBoard({
     const next = firstEnabledCell(remaining);
     setCursor(next);
     requestAnimationFrame(() => {
-      cellRefs.current[next.row]?.[next.col]?.focus();
+      cellRefs.current[next.row]?.[next.col]?.focus({ preventScroll: true });
     });
   };
 
@@ -164,7 +164,7 @@ export function SeaBoard({
     );
     if (!onBoard) return;
     const target = cellRefs.current[focusCell.row]?.[focusCell.col];
-    if (target && active !== target) target.focus();
+    if (target && active !== target) target.focus({ preventScroll: true });
   });
 
   return (
