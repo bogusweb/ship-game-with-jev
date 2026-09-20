@@ -21,6 +21,8 @@ const COPY: Record<TurnKind, { label: string; hint: string }> = {
   lost: { label: "Jev won", hint: "Your fleet is gone" },
 };
 
+const TURN_KINDS = Object.keys(COPY) as TurnKind[];
+
 export function TurnIndicator({ kind }: TurnIndicatorProps) {
   const copy = COPY[kind];
   const yours = kind === "your-shot" || kind === "placement";
@@ -31,29 +33,11 @@ export function TurnIndicator({ kind }: TurnIndicatorProps) {
       role="status"
       aria-live="polite"
       aria-atomic="true"
-      className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between"
+      className="flex min-h-10 items-center"
     >
-      <div className="flex flex-wrap items-center gap-3">
-        <span
-          className={`rounded-full px-3 py-1 text-sm font-medium text-white ${
-            yours ? "bg-[#dc6b5e] ring-2 ring-[#dc6b5e] ring-offset-2 ring-offset-[#fefce4]" : "bg-[#dc6b5e]"
-          }`}
-        >
-          You
-        </span>
-        <span className="text-[#5c4a3a]/60">vs.</span>
-        <span
-          className={`rounded-full px-3 py-1 text-sm font-medium text-white ${
-            jevs ? "bg-[#4a9d93] ring-2 ring-[#4a9d93] ring-offset-2 ring-offset-[#fefce4]" : "bg-[#4a9d93]"
-          }`}
-        >
-          Jev
-        </span>
-      </div>
-
       <div
         data-turn={kind}
-        className={`inline-flex items-center gap-2 rounded-full px-4 py-2 text-sm font-semibold ${
+        className={`inline-grid grid-cols-[auto_1fr] items-center gap-x-2 rounded-full px-4 py-2 text-sm font-semibold ${
           yours
             ? "bg-[#dc6b5e] text-white"
             : jevs
@@ -67,8 +51,29 @@ export function TurnIndicator({ kind }: TurnIndicatorProps) {
             kind === "jev-thinking" ? "animate-pulse bg-white" : "bg-white/90"
           }`}
         />
-        <span>{copy.label}</span>
-        <span className="hidden font-normal opacity-80 sm:inline">· {copy.hint}</span>
+        <span className="grid">
+          {TURN_KINDS.map((turn) => {
+            const item = COPY[turn];
+            const active = turn === kind;
+            return (
+              <span
+                key={turn}
+                className={active ? "visible" : "invisible"}
+                style={{ gridArea: "1 / 1" }}
+                aria-hidden={!active}
+              >
+                {item.label}
+                <span className="hidden font-normal opacity-80 sm:inline">
+                  {" "}
+                  · {item.hint}
+                </span>
+              </span>
+            );
+          })}
+        </span>
+        <span className="sr-only">
+          {copy.label}. {copy.hint}
+        </span>
       </div>
     </div>
   );

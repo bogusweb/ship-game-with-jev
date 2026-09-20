@@ -16,20 +16,27 @@ export function FleetRemaining({ lengths, accent }: FleetRemainingProps) {
       <p className="text-xs font-medium uppercase tracking-wide text-[#5c4a3a]/55">
         Remaining unsunk
       </p>
-      {lengths.length === 0 ? (
-        <p className="mt-1 text-sm text-[#5c4a3a]/70">None remaining</p>
-      ) : (
-        <ul className="mt-1.5 flex flex-wrap gap-1.5" aria-label="Remaining unsunk ship lengths">
-          {lengths.map((length, index) => (
-            <li
-              key={`${length}-${index}`}
-              className={`rounded-md px-1.5 py-0.5 text-xs font-semibold tabular-nums ring-1 ${chip}`}
-            >
-              {length}
-            </li>
-          ))}
-        </ul>
-      )}
+      <div className="mt-1.5 h-7">
+        {lengths.length === 0 ? (
+          <p className="flex h-7 items-center text-sm text-[#5c4a3a]/70">
+            None remaining
+          </p>
+        ) : (
+          <ul
+            className="flex h-7 flex-nowrap items-center gap-1.5 overflow-x-auto"
+            aria-label="Remaining unsunk ship lengths"
+          >
+            {lengths.map((length, index) => (
+              <li
+                key={`${length}-${index}`}
+                className={`shrink-0 rounded-md px-1.5 py-0.5 text-xs font-semibold tabular-nums ring-1 ${chip}`}
+              >
+                {length}
+              </li>
+            ))}
+          </ul>
+        )}
+      </div>
     </div>
   );
 }
