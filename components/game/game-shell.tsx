@@ -423,7 +423,7 @@ export function GameShell() {
   const jevRemaining = unsunkShipLengths(game.jevBoard);
 
   return (
-    <div className="min-h-full bg-[#fefce4] px-4 py-8 sm:px-6">
+    <div className="min-h-full bg-page px-4 py-8 sm:px-6">
       <div className="mx-auto flex w-full max-w-[96rem] flex-col gap-8">
         <header className="text-center sm:text-left">
           <h1 className="text-3xl font-bold tracking-tight text-[#2c1810] sm:text-4xl">
