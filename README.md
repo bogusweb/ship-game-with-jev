@@ -58,7 +58,7 @@ npm run lint
    - `SHIP_GAME_JEV_DISABLED=1` — kill switch; play continues with fallback only.
    - `SHIP_GAME_LIVE_JEV_TESTS=1` — opt-in; `npm test` never calls TypeSafe unless this is set.
 
-The shot proxy requires a short-lived HttpOnly session cookie (`GET /api/jev/session`), rejects cross-origin calls in production, validates the board payload, and rate-limits abusive bursts. Bots and scripts that skip the game UI cannot spend the TypeSafe budget.
+The shot proxy keeps the API key on the server, issues a short-lived HttpOnly session cookie (`GET /api/jev/session`), rejects cross-origin calls in production, and validates the board payload. Localhost / `127.0.0.1` are never blocked. The proxy does not 429 burst fire — a match’s HIT chain and fallback shots must stay playable.
 
 ## Play
 

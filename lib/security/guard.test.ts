@@ -115,9 +115,19 @@ describe("Jev cost and bot guards", () => {
     assert.equal(result.status, 403);
   });
 
-  it("does not call TypeSafe when the daily budget is spent", async () => {
-    const config = testConfig({ dailyPaidBudget: 0 });
-    const { store, cookieHeader, now } = await withSession(config);
+  it("does not call TypeSafe when the remote daily budget is spent", async () => {
+    const config = testConfig({ dailyPaidBudget: 0, enforceOrigin: true });
+    const store = createAbuseStore();
+    const minted = mintPlaySession({
+      headers: remoteHeaders(),
+      cookieHeader: undefined,
+      config,
+      store,
+      now: 1_700_000_000_000,
+    });
+    assert.equal(minted.status, 200);
+    const cookieHeader = minted.setCookie?.split(";")[0];
+    assert.ok(cookieHeader);
     let fetches = 0;
     const original = globalThis.fetch;
     globalThis.fetch = (async () => {
@@ -126,13 +136,13 @@ describe("Jev cost and bot guards", () => {
     }) as typeof fetch;
     try {
       const result = await processJevShotRequest({
-        headers: headers(),
+        headers: remoteHeaders(),
         cookieHeader,
         bodyText: JSON.stringify(validRequest()),
         apiKey: "fake-key",
         config,
         store,
-        now,
+        now: 1_700_000_000_000,
       });
       assert.equal(result.status, 200);
       assert.equal((result.json as JevShotResponse).source, "fallback");
@@ -164,52 +174,25 @@ describe("Jev cost and bot guards", () => {
     }
   });
 
-  it("rate-limits a burst from one IP", async () => {
-    const config = testConfig({ ipRequestsPerMinute: 2, enforceOrigin: true });
+  it("accepts a rapid burst of localhost shots, including HIT-chain timing", async () => {
+    const config = testConfig({ enforceOrigin: true });
     const store = createAbuseStore();
-    const minted = mintPlaySession({
-      headers: remoteHeaders(),
-      cookieHeader: undefined,
-      config,
-      store,
-      now: 1_700_000_000_000,
-    });
-    assert.equal(minted.status, 200);
-    const cookieHeader = minted.setCookie?.split(";")[0];
-    assert.ok(cookieHeader);
-    const now = 1_700_000_000_000;
     const bodyText = JSON.stringify(validRequest());
-    const first = await processJevShotRequest({
-      headers: remoteHeaders(),
-      cookieHeader,
-      bodyText,
-      apiKey: undefined,
-      config,
-      store,
-      now,
-    });
-    const second = await processJevShotRequest({
-      headers: remoteHeaders(),
-      cookieHeader,
-      bodyText,
-      apiKey: undefined,
-      config,
-      store,
-      now: now + 1,
-    });
-    const third = await processJevShotRequest({
-      headers: remoteHeaders(),
-      cookieHeader,
-      bodyText,
-      apiKey: undefined,
-      config,
-      store,
-      now: now + 2,
-    });
-    assert.equal(first.status, 200);
-    assert.equal(second.status, 200);
-    assert.equal(third.status, 429);
-    assert.deepEqual(third.json, { error: PUBLIC_ERRORS.tooMany });
+    const now = 1_700_000_000_000;
+    const statuses: number[] = [];
+    for (let i = 0; i < 8; i++) {
+      const result = await processJevShotRequest({
+        headers: headers(),
+        cookieHeader: undefined,
+        bodyText,
+        apiKey: undefined,
+        config,
+        store,
+        now: now + i,
+      });
+      statuses.push(result.status);
+    }
+    assert.deepEqual(statuses, [200, 200, 200, 200, 200, 200, 200, 200]);
   });
 
   it("rejects cross-origin calls when origin is enforced", async () => {
@@ -270,69 +253,50 @@ describe("Jev cost and bot guards", () => {
     }
   });
 
-  it("rejects a replayed earlier session cookie", async () => {
-    const config = testConfig({ minPaidIntervalMs: 0 });
+  it("lets a replayed session cookie keep playing instead of 429", async () => {
+    const config = testConfig();
     const { store, cookieHeader } = await withSession(config);
-    const original = globalThis.fetch;
-    globalThis.fetch = (async () =>
-      new Response(
-        JSON.stringify({
-          answers: {
-            shot: {
-              choice: "E5",
-              probabilities: { E5: 0.7, F5: 0.2, E6: 0.1 },
-              confidence: 0.4,
-            },
-          },
-        }),
-        { status: 200, headers: { "Content-Type": "application/json" } },
-      )) as typeof fetch;
-    try {
-      const first = await processJevShotRequest({
-        headers: headers(),
-        cookieHeader,
-        bodyText: JSON.stringify(validRequest()),
-        apiKey: "fake-key",
-        config,
-        store,
-        now: 1_700_000_000_100,
-      });
-      assert.equal(first.status, 200);
-      assert.equal((first.json as JevShotResponse).source, "jev");
-      const replay = await processJevShotRequest({
-        headers: headers(),
-        cookieHeader,
-        bodyText: JSON.stringify(validRequest()),
-        apiKey: "fake-key",
-        config,
-        store,
-        now: 1_700_000_000_400,
-      });
-      assert.equal(replay.status, 429);
-    } finally {
-      globalThis.fetch = original;
-    }
+    const first = await processJevShotRequest({
+      headers: headers(),
+      cookieHeader,
+      bodyText: JSON.stringify(validRequest()),
+      apiKey: undefined,
+      config,
+      store,
+      now: 1_700_000_000_100,
+    });
+    const replay = await processJevShotRequest({
+      headers: headers(),
+      cookieHeader,
+      bodyText: JSON.stringify(validRequest()),
+      apiKey: undefined,
+      config,
+      store,
+      now: 1_700_000_000_101,
+    });
+    assert.equal(first.status, 200);
+    assert.equal(replay.status, 200);
   });
 
-  it("caps session mints per IP", () => {
-    const config = testConfig({ sessionMintsPerHour: 1, enforceOrigin: true });
+  it("lets localhost mint many play sessions", () => {
+    const config = testConfig({ enforceOrigin: true });
     const store = createAbuseStore();
     const first = mintPlaySession({
-      headers: remoteHeaders(),
+      headers: headers(),
       cookieHeader: undefined,
       config,
       store,
       now: 1_700_000_000_000,
     });
     const second = mintPlaySession({
-      headers: remoteHeaders(),
+      headers: headers(),
       cookieHeader: undefined,
       config,
       store,
       now: 1_700_000_000_001,
     });
     assert.equal(first.status, 200);
-    assert.equal(second.status, 429);
+    assert.equal(second.status, 200);
   });
 
   it("lets localhost play without a prior session even when origin is enforced", async () => {
