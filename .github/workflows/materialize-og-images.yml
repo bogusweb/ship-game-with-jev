@@ -1,0 +1,41 @@
+name: materialize-og-images
+on:
+  push:
+    branches: [cursor/social-meta-og-8c6f]
+jobs:
+  materialize:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+      - name: Decode JPEGs when both payloads exist
+        run: |
+          set -euo pipefail
+          if [ ! -f tmp/og-image-en.jpg.b64 ] || [ ! -f tmp/og-image-pl.jpg.b64 ]; then
+            echo "payloads not ready yet"
+            exit 0
+          fi
+          mkdir -p public
+          base64 -d tmp/og-image-en.jpg.b64 > public/og-image-en.jpg
+          base64 -d tmp/og-image-pl.jpg.b64 > public/og-image-pl.jpg
+          python3 - <<'PY'
+          from pathlib import Path
+          checks = {
+              "public/og-image-en.jpg": 70591,
+              "public/og-image-pl.jpg": 73486,
+          }
+          for path, size in checks.items():
+              data = Path(path).read_bytes()
+              assert data[:3] == b"\xff\xd8\xff", path
+              assert len(data) == size, (path, len(data), size)
+          PY
+          rm -f tmp/og-image-en.jpg.b64 tmp/og-image-pl.jpg.b64
+          rmdir tmp 2>/dev/null || true
+          rm -f .github/workflows/materialize-og-images.yml
+          git config user.name "Pawel Boguslawski"
+          git config user.email "bogusweb@users.noreply.github.com"
+          git add public/og-image-en.jpg public/og-image-pl.jpg
+          git add -u tmp .github/workflows/materialize-og-images.yml
+          git commit -m "feat: add Open Graph and Twitter card images"
+          git push
