@@ -69,12 +69,12 @@ export function MoveJournal({
       </div>
 
       <div
-        className="flex min-h-[4.75rem] gap-2 overflow-x-auto pb-1"
+        className="flex min-h-[5.25rem] items-center gap-2 overflow-x-auto py-1.5"
         role="list"
         aria-label="Move history, newest on the left"
       >
         {ordered.length === 0 ? (
-          <div role="listitem" className="flex min-h-[4.75rem] items-center">
+          <div role="listitem" className="flex min-h-[4.5rem] items-center">
             <p className="text-sm text-[#5c4a3a]/70">{emptyMessage}</p>
           </div>
         ) : (
