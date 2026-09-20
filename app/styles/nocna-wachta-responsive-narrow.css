@@ -156,6 +156,7 @@
   }
   .night .placement-auto,
   .night .placement-step:not(.second),
+  .night .placement-quick-actions,
   .night .placement-roster {
     grid-column: 1/-1;
   }
@@ -181,10 +182,12 @@
   .night .rotate-button {
     margin-top: 8px;
   }
-  .night .placement-utilities {
-    grid-column: 1/-1;
-    margin-top: 0;
+  .night .placement-quick-actions {
+    margin-bottom: 10px;
     justify-content: flex-start;
+  }
+  .night .placement-quick-actions .secondary {
+    flex: 0 1 230px;
   }
   .night .placement-map-header {
     flex-direction: row;
@@ -208,9 +211,6 @@
     max-width: 650px;
     width: 100%;
     margin: auto;
-  }
-  .night .placement-auto {
-    min-width: 0;
   }
 }
 
@@ -304,6 +304,10 @@
     gap: 8px;
   }
   .night .placement-auto {
+    min-width: 0;
+  }
+  .night .placement-quick-actions .secondary {
+    flex: 1;
     min-width: 0;
   }
   .night .target-data {
