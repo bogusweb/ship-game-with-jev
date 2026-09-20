@@ -1,6 +1,7 @@
 "use client";
 
 import { FLEET_LENGTHS } from "@/lib/game/constants";
+import { useLocale } from "@/lib/i18n";
 
 type FleetRemainingProps = {
   lengths: number[];
@@ -20,6 +21,7 @@ function fleetChips(unsunk: number[]) {
 }
 
 export function FleetRemaining({ lengths, accent }: FleetRemainingProps) {
+  const { t } = useLocale();
   const chip =
     accent === "player"
       ? "bg-[#dc6b5e]/15 text-[#8b3a30] ring-[#dc6b5e]/30"
@@ -29,18 +31,20 @@ export function FleetRemaining({ lengths, accent }: FleetRemainingProps) {
   return (
     <div className="mt-1.5">
       <p className="text-xs font-medium uppercase tracking-wide text-[#5c4a3a]/55">
-        Fleet
+        {t("fleet.label")}
       </p>
       <div className="mt-1.5 h-7">
         <ul
           className="flex h-7 flex-nowrap items-center gap-1.5 overflow-x-auto"
-          aria-label="Fleet ship lengths"
+          aria-label={t("fleet.aria")}
         >
           {chips.map((item) => (
             <li
               key={item.key}
               aria-label={
-                item.sunk ? `Length ${item.length}, sunk` : `Length ${item.length}`
+                item.sunk
+                  ? t("fleet.lengthSunk", { length: item.length })
+                  : t("fleet.length", { length: item.length })
               }
               aria-disabled={item.sunk || undefined}
               className={`shrink-0 rounded-md px-1.5 py-0.5 text-xs font-semibold tabular-nums ring-1 ${
