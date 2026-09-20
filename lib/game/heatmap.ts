@@ -323,7 +323,7 @@ export function scoreLegalShots(
         reason = "hunt-density";
       }
     } else if (smallest >= 2 && parity) {
-        heat += Math.max(2, Math.round(heat * 0.35));
+      heat += Math.max(2, Math.round(heat * 0.35));
       reason = "parity";
     } else if (smallest >= 2) {
       reason = "off-parity";
