@@ -35,6 +35,10 @@ import {
   type MatchHistoryItem,
 } from "@/lib/game/match-history";
 import {
+  loadFireOnClick,
+  saveFireOnClick,
+} from "@/lib/game/fire-on-click";
+import {
   archiveMatchShots,
   loadStoredPlayerShotHistory,
   makePlayerShotRecord,
@@ -201,6 +205,9 @@ export function GameShell() {
   const [hoverCell, setHoverCell] = useState<Coord | null>(null);
 
   const [selected, setSelected] = useState<Coord | null>(null);
+  const [fireOnClick, setFireOnClick] = useState(() =>
+    typeof window !== "undefined" ? loadFireOnClick() : true,
+  );
   const [scan, setScan] = useState(false);
   const [rulesOpen, setRulesOpen] = useState(false);
 
@@ -495,8 +502,17 @@ export function GameShell() {
 
   const handleSelect = (row: number, col: number) => {
     if (!canSelect(row, col)) return;
+    if (fireOnClick) {
+      fireAt(row, col);
+      return;
+    }
     setSelected({ row, col });
     setStatus({ code: "targetSelected", label: cellLabel(row, col) });
+  };
+
+  const handleFireOnClickChange = (value: boolean) => {
+    setFireOnClick(value);
+    saveFireOnClick(value);
   };
 
   const handleFire = () => {
@@ -679,7 +695,7 @@ export function GameShell() {
             isCellEnabled={canSelect}
             cellHint={(row, col, state) =>
               state === "unknown"
-                ? t("cell.targetHint")
+                ? t(fireOnClick ? "cell.fireHint" : "cell.targetHint")
                 : t("cell.alreadyFired")
             }
           />
@@ -701,6 +717,8 @@ export function GameShell() {
           selected={selected}
           phase={game.phase}
           jevThinking={isJevThinking}
+          fireOnClick={fireOnClick}
+          onFireOnClickChange={handleFireOnClickChange}
           onFire={handleFire}
         />
 
