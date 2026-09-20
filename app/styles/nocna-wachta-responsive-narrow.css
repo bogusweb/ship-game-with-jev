@@ -303,10 +303,6 @@
     justify-content: space-between;
     gap: 8px;
   }
-  .night .fire-click-toggle {
-    font-size: 8px;
-    gap: 5px;
-  }
   .night .placement-auto {
     min-width: 0;
   }

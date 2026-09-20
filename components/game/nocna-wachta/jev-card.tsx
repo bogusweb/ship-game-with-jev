@@ -6,8 +6,8 @@ import { Icon } from "./icons";
 export type PredictionStatus = "empty" | "loading" | "ready" | "error";
 
 export type JevCardProps = {
-  /** Real engine/status line. The mockup quotes are sample copy, not model output. */
-  statusText: string;
+  /** UI flavor line for the card, not a model utterance and not the prediction. */
+  quote: string;
   predictionStatus: PredictionStatus;
   predictionLabel?: string;
   predictionPercent?: number;
@@ -17,7 +17,7 @@ export type JevCardProps = {
 };
 
 export function JevCard({
-  statusText,
+  quote,
   predictionStatus,
   predictionLabel,
   predictionPercent,
@@ -52,8 +52,8 @@ export function JevCard({
         <span className="spacer" />
         <span className="dot" style={{ color: "var(--sj-accent)" }} />
       </div>
-      <p className="quote" role="status" aria-live="polite">
-        {statusText}
+      <p className="quote" aria-live="polite">
+        „{quote}”
       </p>
       <div className="predict-line">
         <Icon name="spark" />

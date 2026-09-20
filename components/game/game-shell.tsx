@@ -86,6 +86,28 @@ type StatusState =
   | { code: "invalidPlacement" }
   | { code: "invalidShot" };
 
+function formatJevQuote(t: Translate, status: StatusState): string {
+  switch (status.code) {
+    case "hitAgain":
+    case "sunkJevShip":
+      return t("jev.quote.playerHit");
+    case "missJevThinking":
+      return t("jev.quote.playerMiss");
+    case "jevHitAgain":
+      return t("jev.quote.jevHit");
+    case "jevSunkYourShip":
+      return t("jev.quote.jevSunk");
+    case "jevMissed":
+      return t("jev.quote.jevMiss");
+    case "won":
+      return t("jev.quote.won");
+    case "lost":
+      return t("jev.quote.lost");
+    default:
+      return t("jev.quote.ready");
+  }
+}
+
 function formatStatus(t: Translate, status: StatusState): string {
   switch (status.code) {
     case "placeFleet":
@@ -179,7 +201,6 @@ export function GameShell() {
   const [hoverCell, setHoverCell] = useState<Coord | null>(null);
 
   const [selected, setSelected] = useState<Coord | null>(null);
-  const [fireOnClick, setFireOnClick] = useState(true);
   const [scan, setScan] = useState(false);
   const [rulesOpen, setRulesOpen] = useState(false);
 
@@ -198,6 +219,7 @@ export function GameShell() {
 
   const gameOver = game.phase === "won" || game.phase === "lost";
   const statusText = formatStatus(t, status);
+  const jevQuote = formatJevQuote(t, status);
 
   const activeLength = activeSlot != null ? FLEET_LENGTHS[activeSlot] : null;
   const placementError = useMemo(() => {
@@ -473,10 +495,6 @@ export function GameShell() {
 
   const handleSelect = (row: number, col: number) => {
     if (!canSelect(row, col)) return;
-    if (fireOnClick) {
-      fireAt(row, col);
-      return;
-    }
     setSelected({ row, col });
     setStatus({ code: "targetSelected", label: cellLabel(row, col) });
   };
@@ -587,7 +605,7 @@ export function GameShell() {
         </section>
 
         <JevCard
-          statusText={statusText}
+          quote={jevQuote}
           predictionStatus={predictionStatus}
           predictionLabel={predictionLabel}
           predictionPercent={predictionPercent}
@@ -657,10 +675,11 @@ export function GameShell() {
             selected={selected}
             predicted={scan ? predictionCell : null}
             onCellActivate={handleSelect}
+            onCellConfirm={fireAt}
             isCellEnabled={canSelect}
             cellHint={(row, col, state) =>
               state === "unknown"
-                ? t(fireOnClick ? "cell.fireHint" : "cell.targetHint")
+                ? t("cell.targetHint")
                 : t("cell.alreadyFired")
             }
           />
@@ -682,8 +701,6 @@ export function GameShell() {
           selected={selected}
           phase={game.phase}
           jevThinking={isJevThinking}
-          fireOnClick={fireOnClick}
-          onFireOnClickChange={setFireOnClick}
           onFire={handleFire}
         />
 
@@ -719,9 +736,8 @@ export function GameShell() {
         hits={playerHits}
         playerBoard={game.playerBoard}
         playerView={playerView}
-        jevBoard={game.jevBoard}
-        opponentView={game.opponentView}
         jevSunkCount={jevSunkLengths.length}
+        quote={jevQuote}
         onNewGame={handleNewGame}
         onFleetReport={() => setScreen("fleet")}
       />

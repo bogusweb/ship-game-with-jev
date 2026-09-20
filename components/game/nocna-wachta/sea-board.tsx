@@ -45,6 +45,8 @@ export type SeaBoardProps = {
     orientation: Orientation;
   } | null;
   onCellActivate?: (row: number, col: number) => void;
+  /** Enter/Space. Falls back to onCellActivate when omitted. */
+  onCellConfirm?: (row: number, col: number) => void;
   onCellHover?: (row: number, col: number) => void;
   onCellLeave?: () => void;
   /** Whether a given cell accepts pointer/keyboard input. */
@@ -99,6 +101,7 @@ export function SeaBoard({
   ghost,
   focusRange,
   onCellActivate,
+  onCellConfirm,
   onCellHover,
   onCellLeave,
   isCellEnabled,
@@ -146,7 +149,7 @@ export function SeaBoard({
     if (event.key !== "Enter" && event.key !== " ") return;
     if (!enabledAt(row, col)) return;
     event.preventDefault();
-    onCellActivate?.(row, col);
+    (onCellConfirm ?? onCellActivate)?.(row, col);
     const remaining = (r: number, c: number) =>
       (r !== row || c !== col) && enabledAt(r, c);
     const next = firstEnabledCell(remaining);
