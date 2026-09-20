@@ -178,7 +178,7 @@
   max-width: 1470px;
   margin: auto;
   display: grid;
-  grid-template-columns: 296px 1fr;
+  grid-template-columns: 550px 1fr;
   gap: 32px;
   padding-top: 27px;
 }
@@ -214,7 +214,7 @@
   font-size: 11px;
   line-height: 1.6;
   color: var(--muted);
-  max-width: 245px;
+  max-width: 500px;
 }
 
 .night .jev-card {
