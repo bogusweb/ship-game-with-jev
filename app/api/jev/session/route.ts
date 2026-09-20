@@ -1,18 +1,14 @@
-import { processJevShotRequest } from "@/lib/security/jev-http";
+import { mintPlaySession } from "@/lib/security/jev-http";
 import { NextResponse } from "next/server";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
 
-export async function POST(request: Request) {
-  const bodyText = await request.text();
-  const result = await processJevShotRequest({
+export async function GET(request: Request) {
+  const result = mintPlaySession({
     headers: request.headers,
     cookieHeader: request.headers.get("cookie") ?? undefined,
-    bodyText,
-    apiKey: process.env.SHIP_GAME_TYPESAFE_API_KEY,
   });
-
   const response = NextResponse.json(result.json, { status: result.status });
   response.headers.set("Cache-Control", "no-store");
   if (result.setCookie) {

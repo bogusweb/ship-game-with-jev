@@ -11,3 +11,8 @@
   from = "/api/jev/shot"
   to = "/.netlify/functions/jev-shot"
   status = 200
+
+[[redirects]]
+  from = "/api/jev/session"
+  to = "/.netlify/functions/jev-session"
+  status = 200

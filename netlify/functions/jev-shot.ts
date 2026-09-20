@@ -1,9 +1,10 @@
 import type { Handler, HandlerEvent } from "@netlify/functions";
 import {
-  chooseJevShot,
-  choosePlayerNextShot,
-  type JevShotRequest,
-} from "../../lib/jev/shot";
+  mintPlaySession,
+  processJevShotRequest,
+  type HttpResult,
+} from "../../lib/security/jev-http";
+import { headerMapFromRecord } from "../../lib/security/request-meta";
 
 declare const Netlify: {
   env: {
@@ -11,38 +12,54 @@ declare const Netlify: {
   };
 };
 
+function apiKey(): string | undefined {
+  try {
+    return Netlify.env.get("SHIP_GAME_TYPESAFE_API_KEY") ?? process.env.SHIP_GAME_TYPESAFE_API_KEY;
+  } catch {
+    return process.env.SHIP_GAME_TYPESAFE_API_KEY;
+  }
+}
+
+function cookieOf(event: HandlerEvent): string | undefined {
+  return event.headers.cookie ?? event.headers.Cookie;
+}
+
+function fromResult(result: HttpResult) {
+  const headers: Record<string, string> = {
+    "Content-Type": "application/json",
+    "Cache-Control": "no-store",
+  };
+  if (result.setCookie) headers["Set-Cookie"] = result.setCookie;
+  if (result.retryAfterSec) headers["Retry-After"] = String(result.retryAfterSec);
+  return {
+    statusCode: result.status,
+    headers,
+    body: JSON.stringify(result.json),
+  };
+}
+
 export const handler: Handler = async (event: HandlerEvent) => {
   if (event.httpMethod !== "POST") {
     return { statusCode: 405, body: "Method not allowed" };
   }
 
-  try {
-    const body = JSON.parse(event.body ?? "{}") as JevShotRequest;
-    const wantsShot = Boolean(body.legalMoves?.length);
-    const wantsPrediction = Boolean(body.playerLegalTargets?.length);
+  const result = await processJevShotRequest({
+    headers: headerMapFromRecord(event.headers),
+    cookieHeader: cookieOf(event),
+    bodyText: event.body ?? "",
+    apiKey: apiKey(),
+  });
+  return fromResult(result);
+};
 
-    if (!wantsShot && !wantsPrediction) {
-      return {
-        statusCode: 400,
-        body: JSON.stringify({ error: "No legal moves provided" }),
-      };
-    }
-
-    const apiKey = Netlify.env.get("SHIP_GAME_TYPESAFE_API_KEY");
-    const response = wantsShot
-      ? await chooseJevShot(apiKey, body)
-      : await choosePlayerNextShot(apiKey, body);
-
-    return {
-      statusCode: 200,
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(response),
-    };
-  } catch (e) {
-    const message = e instanceof Error ? e.message : "Jev shot failed";
-    return {
-      statusCode: 500,
-      body: JSON.stringify({ error: message }),
-    };
+export const sessionHandler: Handler = async (event: HandlerEvent) => {
+  if (event.httpMethod !== "GET") {
+    return { statusCode: 405, body: "Method not allowed" };
   }
+  return fromResult(
+    mintPlaySession({
+      headers: headerMapFromRecord(event.headers),
+      cookieHeader: cookieOf(event),
+    }),
+  );
 };
