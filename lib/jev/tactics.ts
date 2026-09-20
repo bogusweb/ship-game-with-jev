@@ -1,5 +1,9 @@
 import { cellLabel, isInBounds } from "@/lib/game/coords";
-import { remainingFleetFromSunk } from "@/lib/game/heatmap";
+import {
+  describeAxisLock,
+  remainingFleetFromSunk,
+} from "@/lib/game/heatmap";
+import type { OpponentView, ShotCellState } from "@/lib/game/types";
 
 export const JEV_TACTICS = `
 You are Jev playing Battleship on a 10×10 grid (rows 1-10, columns A-J).
@@ -7,15 +11,15 @@ Fleet: 4, 3, 3, 2, 2, 2, 1, 1, 1, 1. Ships cannot touch, including diagonally.
 
 Tactics:
 1. HUNT mode (no unresolved hits): prefer checkerboard parity cells for the smallest remaining ship; use the placement heatmap; spread across quadrants. Never walk the grid in row-major or column-major order.
-2. TARGET mode (unresolved hit exists): fire orthogonally adjacent to hits; when two hits align, extend that line. Do not wander back to A1-style leftovers.
+2. TARGET mode: ships are straight — they cannot bend. Fire orthogonally adjacent to a single unresolved hit. After two or more collinear unresolved hits the axis is known: fire only at the two line ends; never shoot flanks (perpendicular neighbors). Do not wander back to A1-style leftovers.
 3. When a ship is sunk, its 8-neighborhood (including diagonals) is already miss/halo and is not a legal move.
 4. Never repeat a cell that was already shot (miss, hit, or halo).
 5. Prefer cells that reduce uncertainty; avoid random scatter when a clear line extension exists.
-6. Code owns legalMoves and the placement heatmap. Choose among those scored cells; do not invent illegal squares.
+6. Code owns legalMoves and the placement heatmap. Choose among the offered scored cells; do not invent illegal squares.
 `.trim();
 
 export const SHOT_CHOICE_INSTRUCTIONS =
-  "Hunt: checkerboard parity for the smallest remaining ship; prefer high placement-heatmap cells; spread across quadrants. Target: unresolved hits — fire orthogonal neighbors and line extensions. After a sink the 8-neighborhood is already illegal. Never walk the grid in row or column order. Never pick the first leftover cell just because it is listed first. Code already filtered legalMoves.";
+  "Hunt: checkerboard parity for the smallest remaining ship; prefer high placement-heatmap cells; spread across quadrants. Ships are straight — they cannot bend. Target: unresolved hits — fire orthogonal neighbors. After 2+ collinear hits the axis is known: fire only at the two line ends; never shoot flanks (perpendicular neighbors). After a sink the 8-neighborhood is already illegal. Never walk the grid in row or column order. Never pick the first leftover cell just because it is listed first. Code already filtered legalMoves; choose only among the offered cells.";
 
 const ORTHO = [
   { row: -1, col: 0 },
@@ -60,6 +64,11 @@ export function formatBoardState(
   const remaining = remainingFleetFromSunk(sunkLengths);
   const hits = unresolvedHitLabels(cells);
   const mode = hits.length > 0 ? "TARGET" : "HUNT";
+  const view: OpponentView = {
+    cells: cells.map((row) => row.map((c) => c as ShotCellState)),
+    sunkShipLengths: sunkLengths,
+  };
+  const { axisLine, extendLine } = describeAxisLock(view);
   const sunk =
     sunkLengths.length > 0
       ? `Sunk enemy ships (lengths): ${sunkLengths.join(", ")}`
@@ -72,5 +81,5 @@ export function formatBoardState(
     hits.length > 0
       ? `Unresolved hits: ${hits.join(", ")}`
       : "Unresolved hits: none";
-  return `${JEV_TACTICS}\n\nMode: ${mode}\n${remainingLine}\n${hitsLine}\n${sunk}\n\nOpponent board (?=unknown, o=miss, X=hit, .=halo):\n${header}\n${rows.join("\n")}`;
+  return `${JEV_TACTICS}\n\nMode: ${mode}\n${axisLine}\n${extendLine}\n${remainingLine}\n${hitsLine}\n${sunk}\n\nOpponent board (?=unknown, o=miss, X=hit, .=halo):\n${header}\n${rows.join("\n")}`;
 }
