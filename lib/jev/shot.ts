@@ -4,7 +4,6 @@ import {
   asShotPercent,
   chosenShotPercent,
   rankShotPreferences,
-  type JournalEntry,
   type ShotPreference,
 } from "@/lib/game/journal";
 import {
@@ -17,37 +16,23 @@ import {
   type PlayerShotHistoryBundle,
 } from "@/lib/game/player-shot-history";
 import { formatBoardState, SHOT_CHOICE_INSTRUCTIONS } from "./tactics";
+import type {
+  JevShotRequest,
+  JevShotResponse,
+  PlayerNextShotResponse,
+  PlayerShotPrediction,
+} from "./types";
 
 export const JEV_MODEL = "jev-latest";
 export const MAX_CHOICE_CRITERIA = 255;
 
-export type JevShotRequest = {
-  move: number;
-  legalMoves: Coord[];
-  playerView: OpponentView;
-  playerShotHistory?: PlayerShotHistoryBundle;
-  playerLegalTargets?: Coord[];
-};
-
-export type PlayerShotPrediction = {
-  chosen: Coord;
-  label: string;
-  chosenPercent: number;
-  source: "jev";
-};
-
-export type JevShotResponse = {
-  chosen: Coord;
-  label: string;
-  probabilities: ShotPreference[];
-  chosenPercent: number;
-  /** TypeSafe model confidence 0–1 when the API provided it. Not a cell probability. */
-  confidence?: number;
-  ms: number;
-  source: "jev" | "fallback";
-  prediction?: PlayerShotPrediction | null;
-  predictionError?: string | null;
-};
+export type {
+  JevShotRequest,
+  JevShotResponse,
+  PlayerNextShotResponse,
+  PlayerShotPrediction,
+} from "./types";
+export { toJournalEntry } from "./client";
 
 export type ChoiceAnswer = {
   choice: string;
@@ -229,7 +214,7 @@ export function fallbackShot(
   const scores = scoreLegalShots(playerView, moves);
   const legalKeys = scores.map((s) => s.label);
   const probMap: Record<string, number> = {};
-  const total = scores.reduce((sum, s) => sum + Math.max(1, s.heat), 0);
+  const total = scores.reduce((sum, s) => s + Math.max(1, s.heat), 0);
   for (const score of scores) {
     probMap[score.label] = (Math.max(1, score.heat) / total) * 100;
   }
@@ -340,22 +325,6 @@ function predictionFromTargets(
   }
 }
 
-export function toJournalEntry(
-  move: number,
-  response: JevShotResponse,
-): JournalEntry {
-  return {
-    move,
-    ms: response.ms,
-    chosen: response.chosen,
-    label: response.label,
-    probabilities: response.probabilities,
-    chosenPercent: response.chosenPercent,
-    confidence: response.confidence,
-    source: response.source,
-  };
-}
-
 export function buildStateFromView(
   playerView: OpponentView,
   history?: PlayerShotHistoryBundle,
@@ -441,11 +410,6 @@ export async function chooseJevShot(
     );
   }
 }
-
-export type PlayerNextShotResponse = {
-  prediction: PlayerShotPrediction | null;
-  predictionError?: string | null;
-};
 
 export async function choosePlayerNextShot(
   apiKey: string | undefined,
