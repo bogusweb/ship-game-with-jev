@@ -1,0 +1,38 @@
+name: Cleanup hunt screenshot scaffolding
+
+on:
+  push:
+    branches: [cursor/jev-hunt-screenshots-405e]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  cleanup:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: cursor/jev-hunt-screenshots-405e
+          token: ${{ secrets.GITHUB_TOKEN }}
+      - name: Remove decode payloads and helper workflow
+        run: |
+          set -euo pipefail
+          if [ ! -f docs/jev-hunt-after-autoplace.png ] || [ ! -f docs/jev-hunt-midgame-board.png ] || [ ! -f docs/jev-hunt-journal-jev-source.png ]; then
+            echo "PNG screenshots missing; skip cleanup"
+            exit 0
+          fi
+          rm -rf docs/jev-hunt-after-autoplace.webp.b64.d docs/jev-hunt-midgame-board.webp.b64.d
+          rm -f docs/decode-hunt-screenshots.py
+          rm -f .github/workflows/commit-hunt-screenshots.yml
+          rm -f .github/workflows/cleanup-hunt-scaffolding.yml
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          if git diff --cached --quiet; then
+            echo "Nothing to clean up"
+            exit 0
+          fi
+          git commit -m "Remove hunt screenshot decode scaffolding"
+          git push
