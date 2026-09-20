@@ -1,10 +1,14 @@
 "use client";
 
 import { useId, useLayoutEffect, useRef, useState, type KeyboardEvent } from "react";
-import { BOARD_SIZE } from "@/lib/game/constants";
-import { cellLabel } from "@/lib/game/coords";
+import {
+  BOARD_SIZE,
+  cellLabel,
+  firstEnabledCell,
+  moveRoving,
+  ROVING_ARROWS,
+} from "@/lib/game";
 import type { Coord, Orientation, ShotCellState } from "@/lib/game";
-import { firstEnabledCell, moveRoving, ROVING_ARROWS } from "@/lib/game/roving";
 import { ShipArt, gridPoint } from "./ship-art";
 
 export type BoardShip = {
