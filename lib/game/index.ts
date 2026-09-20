@@ -4,7 +4,7 @@ export * from "./draft-fleet";
 export * from "./heatmap";
 export * from "./last-shot";
 export * from "./match-history";
-export * from "./placement";
+export * from "./roving";
 export * from "./session";
 export * from "./shooting";
 export * from "./types";
