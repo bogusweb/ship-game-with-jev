@@ -41,8 +41,8 @@ const paths: Record<IconName, React.ReactNode> = {
   reset: <path d="M4 10a8 8 0 1 1 1 7M4 4v6h6" />,
   help: (
     <>
-      <circle cx="12" cy="12" r="9" />
-      <path d="M9.5 9a2.5 2.5 0 1 1 4.5 1.5c-1 1-2 1-2 3M12 17h.01" />
+      <path d="M9.25 9.25a2.75 2.75 0 1 1 3.85 2.52c-.86.5-1.35 1.05-1.35 2.23" />
+      <path d="M12 17.25h.01" />
     </>
   ),
   shield: (
