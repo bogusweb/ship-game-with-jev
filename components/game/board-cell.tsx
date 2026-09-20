@@ -1,6 +1,10 @@
 "use client";
 
 import { cellLabel } from "@/lib/game/coords";
+import {
+  lastShotAriaSuffix,
+  type LastShotBy,
+} from "@/lib/game/last-shot";
 import { cn } from "@/lib/utils";
 
 export type CellVisual =
@@ -22,6 +26,7 @@ type BoardCellProps = {
   onClick?: () => void;
   onMouseEnter?: () => void;
   compact?: boolean;
+  lastShotBy?: LastShotBy | null;
 };
 
 const visualStyles: Record<CellVisual, string> = {
@@ -35,6 +40,12 @@ const visualStyles: Record<CellVisual, string> = {
   halo: "bg-[#e8e4d8] border-[#d0ccc0]",
 };
 
+const lastShotRing: Record<LastShotBy, string> = {
+  player:
+    "shadow-[inset_0_0_0_2px_#c9a227,inset_0_0_0_4px_rgba(232,186,63,0.55)]",
+  jev: "shadow-[inset_0_0_0_2px_#b24a40,inset_0_0_0_4px_rgba(220,107,94,0.55)]",
+};
+
 export function BoardCell({
   row,
   col,
@@ -44,6 +55,7 @@ export function BoardCell({
   onClick,
   onMouseEnter,
   compact,
+  lastShotBy,
 }: BoardCellProps) {
   const isShot = visual === "miss" || visual === "hit" || visual === "halo";
   const size = compact
@@ -53,7 +65,8 @@ export function BoardCell({
   return (
     <button
       type="button"
-      aria-label={`${cellLabel(row, col)} ${visual}`}
+      aria-label={`${cellLabel(row, col)} ${visual}${lastShotAriaSuffix(lastShotBy)}`}
+      aria-current={lastShotBy ? "true" : undefined}
       disabled={disabled || (!onClick && !isShot)}
       onClick={onClick}
       onMouseEnter={onMouseEnter}
@@ -61,6 +74,7 @@ export function BoardCell({
         "relative min-w-0 rounded-md border text-[10px] transition-colors",
         size,
         visualStyles[visual],
+        lastShotBy ? lastShotRing[lastShotBy] : null,
         onClick && !disabled && "cursor-pointer",
         disabled && "cursor-not-allowed opacity-70",
       )}
@@ -77,6 +91,15 @@ export function BoardCell({
       )}
       {showShips && visual === "ship" && (
         <span className="absolute inset-0 rounded-md bg-[#dc6b5e]/90" />
+      )}
+      {lastShotBy && (
+        <span
+          aria-hidden
+          className={cn(
+            "pointer-events-none absolute top-0.5 left-0.5 z-[1] h-1.5 w-1.5 rounded-full",
+            lastShotBy === "player" ? "bg-[#e8ba3f]" : "bg-[#dc6b5e]",
+          )}
+        />
       )}
       {!compact && (
         <span className="absolute right-0.5 bottom-0 text-[8px] text-[#8a8070]/50">

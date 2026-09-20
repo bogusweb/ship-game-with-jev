@@ -3,6 +3,8 @@
 import { useSyncExternalStore } from "react";
 import { BorderBeam } from "border-beam";
 import { BOARD_SIZE } from "@/lib/game/constants";
+import { isLastShotCell, type LastShotBy } from "@/lib/game/last-shot";
+import type { Coord } from "@/lib/game/types";
 import { BoardCell, type CellVisual } from "./board-cell";
 import { FleetRemaining } from "./fleet-remaining";
 
@@ -20,6 +22,8 @@ type GameBoardProps = {
   remainingAccent: "player" | "jev";
   /** When set, wrap this board with border-beam; beam plays only while true. Never pass on the player board. */
   isJevThinking?: boolean;
+  lastShot?: Coord | null;
+  lastShotBy?: LastShotBy;
 };
 
 export function GameBoard({
@@ -35,6 +39,8 @@ export function GameBoard({
   remainingLengths,
   remainingAccent,
   isJevThinking,
+  lastShot,
+  lastShotBy,
 }: GameBoardProps) {
   const cols = "ABCDEFGHIJ".split("");
   const isClient = useSyncExternalStore(
@@ -82,6 +88,11 @@ export function GameBoard({
                   }
                   onMouseEnter={
                     onCellHover ? () => onCellHover(row, col) : undefined
+                  }
+                  lastShotBy={
+                    lastShotBy && isLastShotCell(row, col, lastShot)
+                      ? lastShotBy
+                      : undefined
                   }
                 />
               );

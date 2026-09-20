@@ -451,6 +451,8 @@ export function GameShell() {
                 showShips
                 remainingLengths={playerRemaining}
                 remainingAccent="player"
+                lastShot={game.lastJevShot}
+                lastShotBy="jev"
                 onCellClick={
                   game.phase === "placement" ? handlePlaceClick : undefined
                 }
@@ -477,6 +479,8 @@ export function GameShell() {
               getCellVisual={jevBoardVisual}
               remainingLengths={jevRemaining}
               remainingAccent="jev"
+              lastShot={game.lastPlayerShot}
+              lastShotBy="player"
               isJevThinking={isJevThinking}
               onCellClick={handleFire}
               canClick={(row, col) =>

@@ -28,6 +28,8 @@ export function createNewGame(): GameState {
     jevBoard: randomFleetPlacement(),
     turn: "player",
     moveCount: 0,
+    lastPlayerShot: null,
+    lastJevShot: null,
   };
 }
 
@@ -110,6 +112,7 @@ export function playerShoot(
     phase,
     turn,
     moveCount: state.moveCount + 1,
+    lastPlayerShot: { row, col },
   };
 
   return { state: next, result };
@@ -154,6 +157,7 @@ export function jevShoot(
     phase,
     turn,
     moveCount: state.moveCount + 1,
+    lastJevShot: { row, col },
   };
 
   return { state: next, result, playerView: view };
