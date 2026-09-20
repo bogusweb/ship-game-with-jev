@@ -1,1 +1,481 @@
-test-restore
+/* Nocna wachta — battle area: heading, turn pill, water theater, legend,
+   attack console, operations log and journal detail. */
+
+.night .battle-main {
+  min-width: 0;
+}
+
+.night .battle-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 15px;
+  margin: 1px 0 20px;
+}
+
+.night .battle-heading h2 {
+  font-family: var(--font-space-grotesk), sans-serif;
+  font-weight: 500;
+  font-size: 23px;
+  letter-spacing: -0.6px;
+}
+
+.night .battle-heading p {
+  font-size: 10px;
+  margin-top: 6px;
+  color: var(--muted);
+}
+
+.night .turn-pill {
+  display: flex;
+  gap: 17px;
+  align-items: center;
+  background: #1f3325;
+  border: 1px solid #354932;
+  border-radius: var(--sj-radius-button);
+  padding: 10px 15px;
+  font-size: 11px;
+  white-space: nowrap;
+}
+
+.night .turn-pill strong {
+  font-weight: 600;
+}
+
+.night .turn-pill .dot {
+  color: var(--accent);
+}
+
+.night .turn-pill .turn-divider {
+  border-left: 1px solid #3a4c35;
+  height: 21px;
+}
+
+.night .turn-pill .turn-number {
+  color: #a1b391;
+  font-family: var(--font-space-grotesk), sans-serif;
+  font-size: 11px;
+}
+
+.night .theater {
+  position: relative;
+  background: radial-gradient(
+    ellipse at 50% 48%,
+    #254136 0,
+    #182c25 45%,
+    #12231e 83%
+  );
+  border: 1px solid #2f4339;
+  border-radius: var(--sj-radius-board);
+  padding: 18px 18px 0;
+  overflow: hidden;
+}
+
+.night .theater:before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background-image: linear-gradient(#bcc6a204 1px, transparent 1px),
+    linear-gradient(90deg, #bcc6a204 1px, transparent 1px);
+  background-size: 25px 25px;
+}
+
+.night .theater-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  position: relative;
+  z-index: 1;
+  padding: 0 4px;
+  gap: 10px;
+}
+
+.night .sector {
+  font-family: var(--font-space-grotesk), sans-serif;
+  font-weight: 500;
+  font-size: 9px;
+  color: #7b9585;
+  letter-spacing: 1.5px;
+}
+
+.night .scan-toggle {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 10px;
+  color: #9bafa1;
+  cursor: pointer;
+}
+
+.night .scan-toggle input {
+  accent-color: var(--accent);
+  width: 12px;
+  height: 12px;
+}
+
+.night .theater .board-art {
+  max-width: 610px;
+  margin: -6px auto -12px;
+  position: relative;
+}
+
+.night .theater-bottom {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  position: relative;
+  padding: 0 5px 21px;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.night .theater-bottom .fleet-strip {
+  flex: 1;
+  min-width: 0;
+}
+
+.night .theater-bottom .small-label {
+  font-size: 9px;
+  color: #89a291;
+  letter-spacing: 1.8px;
+}
+
+.night .legend {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  font-size: 9px;
+  color: var(--muted);
+}
+
+.night .legend span {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.night .legend i {
+  width: 6px;
+  height: 6px;
+  border: 1px solid currentColor;
+  border-radius: 50%;
+  display: inline-block;
+}
+
+.night .legend .hit {
+  color: #db785b;
+}
+
+.night .legend .hit i {
+  background: currentColor;
+}
+
+.night .legend .selected {
+  color: var(--accent);
+}
+
+.night .legend .selected i {
+  border-radius: 2px;
+  transform: rotate(45deg);
+}
+
+.night .attack-console {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 24px;
+  align-items: center;
+  padding: 16px 19px;
+  background: var(--sj-action-panel);
+  border: 1px solid #3a4e38;
+  border-radius: 9px;
+  margin-top: 16px;
+}
+
+.night .attack-actions {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.night .fire-click-toggle {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 10px;
+  color: #9bafa1;
+  white-space: nowrap;
+}
+
+.night .fire-click-toggle input {
+  accent-color: var(--accent);
+  width: 12px;
+  height: 12px;
+}
+
+.night .target-data {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  min-width: 0;
+}
+
+.night .attack-coordinate {
+  font-family: var(--font-space-grotesk), sans-serif;
+  font-weight: 600;
+  letter-spacing: -1px;
+  color: var(--accent);
+  font-size: 31px;
+  border-right: 1px solid #3a4e38;
+  padding-right: 18px;
+  min-width: 41px;
+}
+
+.night .attack-caption {
+  font-size: 10px;
+  color: var(--muted);
+  line-height: 1.5;
+  min-width: 0;
+}
+
+.night .attack-caption b {
+  color: var(--ink);
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.night .primary {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  background: var(--accent);
+  color: var(--sj-on-accent);
+  font-weight: 600;
+  border-radius: var(--sj-radius-button);
+  min-width: 178px;
+  padding: 14px 19px;
+  font-size: 13px;
+  transition: background 0.15s, transform 0.15s, filter 0.15s;
+}
+
+.night .primary:not(:disabled):hover {
+  filter: brightness(1.1);
+  transform: translateY(-1px);
+}
+
+.night .primary svg {
+  width: 18px;
+  height: 18px;
+}
+
+.night .primary:disabled,
+.night .primary[aria-disabled="true"] {
+  opacity: 0.3;
+  cursor: default;
+  filter: none;
+  transform: none;
+}
+
+.night .secondary {
+  border: 1px solid var(--line);
+  border-radius: 7px;
+  padding: 10px 16px;
+  font-size: 12px;
+}
+
+.night .badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  white-space: nowrap;
+  font-size: 11px;
+  font-weight: 600;
+  padding: 7px 11px;
+  border: 1px solid var(--line);
+  border-radius: 20px;
+}
+
+.night .badge > svg {
+  width: 16px;
+  height: 16px;
+  flex-shrink: 0;
+}
+
+.night .activity {
+  margin-top: 21px;
+}
+
+.night .activity-header {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 13px;
+  gap: 12px;
+}
+
+.night .activity-title {
+  font-family: var(--font-space-grotesk), sans-serif;
+  color: #869d8f;
+  font-size: 9px;
+  letter-spacing: 1.3px;
+  white-space: nowrap;
+  text-transform: uppercase;
+}
+
+.night .toast {
+  font-size: 10px;
+  color: var(--muted);
+}
+
+.night .log-list {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+}
+
+.night .log-chip {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  padding: 11px 13px;
+  background: #14261f;
+  border: 1px solid #293d31;
+  border-radius: var(--sj-radius-button);
+  font-size: 10px;
+  justify-content: space-between;
+  color: var(--muted);
+  text-align: left;
+  width: 100%;
+}
+
+.night .log-chip b {
+  font-weight: 500;
+  color: var(--ink);
+}
+
+.night .log-chip .result-hit {
+  color: #d2755b;
+}
+
+.night .log-chip[aria-pressed="true"] {
+  border-color: color-mix(in srgb, var(--accent) 45%, transparent);
+  background: color-mix(in srgb, var(--accent) 7%, #14261f);
+}
+
+.night .page-footer {
+  display: flex;
+  justify-content: space-between;
+  font-size: 10px;
+  color: var(--muted);
+  max-width: 1470px;
+  margin: 27px auto 0;
+  padding-top: 20px;
+  border-top: 1px solid var(--line);
+  gap: 14px;
+}
+
+.night .page-footer b {
+  color: var(--ink);
+  font-weight: 500;
+}
+
+/* Journal detail ---------------------------------------------------------- */
+
+.night .journal-detail {
+  margin-top: 14px;
+  border: 1px solid #293d31;
+  background: #14261f;
+  border-radius: var(--sj-radius-card);
+  padding: 15px 17px;
+}
+
+.night .journal-detail .journal-meta {
+  font-size: 10px;
+  color: var(--muted);
+}
+
+.night .journal-detail .journal-chosen {
+  font-size: 13px;
+  margin-top: 8px;
+  color: var(--ink);
+}
+
+.night .journal-detail .journal-chosen span {
+  color: var(--accent);
+}
+
+.night .journal-detail .journal-pref {
+  font-size: 10px;
+  color: var(--muted);
+  margin-top: 6px;
+}
+
+.night .journal-detail h3 {
+  font-family: var(--font-space-grotesk), sans-serif;
+  font-size: 9px;
+  letter-spacing: 1.3px;
+  text-transform: uppercase;
+  color: #869d8f;
+  margin: 15px 0 9px;
+}
+
+.night .journal-bar-row {
+  margin-bottom: 8px;
+}
+
+.night .journal-bar-head {
+  display: flex;
+  justify-content: space-between;
+  font-size: 10px;
+  color: var(--muted);
+  margin-bottom: 4px;
+  gap: 10px;
+}
+
+.night .journal-bar-head .chosen {
+  color: var(--ink);
+  font-weight: 600;
+}
+
+.night .journal-bar {
+  height: 5px;
+  border-radius: 3px;
+  background: #1f3529;
+  overflow: hidden;
+}
+
+.night .journal-bar > i {
+  display: block;
+  height: 100%;
+  border-radius: 3px;
+  background: var(--accent);
+}
+
+.night .journal-footnote {
+  font-size: 9px;
+  color: var(--muted);
+  line-height: 1.6;
+  margin-top: 8px;
+}
+
+.night .journal-explainer {
+  font-size: 10px;
+  color: var(--muted);
+  margin-top: 13px;
+}
+
+.night .journal-explainer summary {
+  cursor: pointer;
+  color: var(--accent);
+  font-size: 10px;
+}
+
+.night .journal-explainer p {
+  margin-top: 8px;
+  line-height: 1.7;
+}
+
+.night .journal-more {
+  font-size: 10px;
+  color: var(--accent);
+}
