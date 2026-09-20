@@ -704,6 +704,8 @@ export function GameShell() {
         hits={playerHits}
         playerBoard={game.playerBoard}
         playerView={playerView}
+        jevBoard={game.jevBoard}
+        opponentView={game.opponentView}
         jevSunkCount={jevSunkLengths.length}
         onNewGame={handleNewGame}
         onFleetReport={() => setScreen("fleet")}

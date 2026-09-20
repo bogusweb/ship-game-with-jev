@@ -125,16 +125,20 @@ export function ownBoardShips(board: PlayerBoard) {
   }));
 }
 
-/** Sunk opponent ships only — unsunk positions stay hidden. */
-export function revealedOpponentShips(board: PlayerBoard) {
+/** Sunk opponent ships only — unsunk positions stay hidden unless
+ *  `revealRemaining` is set (lost-match postgame). */
+export function revealedOpponentShips(
+  board: PlayerBoard,
+  options?: { revealRemaining?: boolean },
+) {
   return board.ships
-    .filter((ship) => ship.sunk)
+    .filter((ship) => ship.sunk || options?.revealRemaining)
     .map((ship, index) => ({
       key: ship.id || `sunk-${index}`,
       row: ship.origin.row,
       col: ship.origin.col,
       length: ship.length,
       orientation: ship.orientation,
-      damaged: true,
+      damaged: ship.sunk,
     }));
 }

@@ -101,4 +101,22 @@ describe("draft fleet", () => {
     assert.equal(revealed[0].length, FLEET_LENGTHS[0]);
     assert.equal(revealed[0].damaged, true);
   });
+
+  it("reveals remaining opponent ships when a lost match ends", () => {
+    const board = randomFleetPlacement();
+    const sunkBoard = {
+      ships: board.ships.map((ship, index) =>
+        index === 0 ? { ...ship, sunk: true } : ship,
+      ),
+    };
+    const revealed = revealedOpponentShips(sunkBoard, {
+      revealRemaining: true,
+    });
+    assert.equal(revealed.length, FLEET_LENGTHS.length);
+    assert.equal(revealed.filter((ship) => ship.damaged).length, 1);
+    assert.equal(
+      revealed.filter((ship) => !ship.damaged).length,
+      FLEET_LENGTHS.length - 1,
+    );
+  });
 });

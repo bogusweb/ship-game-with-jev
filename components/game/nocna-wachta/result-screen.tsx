@@ -2,7 +2,7 @@
 
 import { FLEET_LENGTHS } from "@/lib/game";
 import type { OpponentView, PlayerBoard } from "@/lib/game";
-import { ownBoardShips } from "@/lib/game/draft-fleet";
+import { ownBoardShips, revealedOpponentShips } from "@/lib/game/draft-fleet";
 import { useLocale } from "@/lib/i18n";
 import { FleetStrip } from "./chrome";
 import { Icon } from "./icons";
@@ -16,6 +16,8 @@ export type ResultScreenProps = {
   hits: number;
   playerBoard: PlayerBoard;
   playerView: OpponentView;
+  jevBoard: PlayerBoard;
+  opponentView: OpponentView;
   jevSunkCount: number;
   onNewGame: () => void;
   onFleetReport: () => void;
@@ -27,6 +29,8 @@ export function ResultScreen({
   hits,
   playerBoard,
   playerView,
+  jevBoard,
+  opponentView,
   jevSunkCount,
   onNewGame,
   onFleetReport,
@@ -34,6 +38,11 @@ export function ResultScreen({
   const { t } = useLocale();
   const accuracy = shots > 0 ? Math.round((hits / shots) * 100) : 0;
   const surviving = playerBoard.ships.filter((ship) => !ship.sunk).length;
+  const reportBoard = won ? playerBoard : jevBoard;
+  const reportView = won ? playerView : opponentView;
+  const reportShips = won
+    ? ownBoardShips(playerBoard)
+    : revealedOpponentShips(jevBoard, { revealRemaining: true });
 
   return (
     <>
@@ -97,20 +106,22 @@ export function ResultScreen({
 
         <div className="result-ocean">
           <div className="result-board-header">
-            <span className="eyebrow">{t("result.boardHeader")}</span>
+            <span className="eyebrow">
+              {won ? t("result.boardHeader") : t("result.boardHeaderLost")}
+            </span>
             <span className="result-seal">
               {won ? t("result.sealWon") : t("result.sealLost")}
             </span>
           </div>
           <SeaBoard
-            ariaLabel={t("board.yourFleet")}
-            cellState={(row, col) => playerView.cells[row][col]}
-            ships={ownBoardShips(playerBoard)}
+            ariaLabel={won ? t("board.yourFleet") : t("board.jevWaters")}
+            cellState={(row, col) => reportView.cells[row][col]}
+            ships={reportShips}
           />
           <div className="result-board-footer">
             <FleetStrip
               lengths={FLEET_LENGTHS}
-              sunkLengths={playerBoard.ships
+              sunkLengths={reportBoard.ships
                 .filter((ship) => ship.sunk)
                 .map((ship) => ship.length)}
             />
