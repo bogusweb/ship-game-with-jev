@@ -20,7 +20,11 @@ import {
   validatePlacement,
 } from "@/lib/game";
 import type { GameState, OpponentView, Orientation, ShotCellState } from "@/lib/game";
-import type { JournalEntry } from "@/lib/game/journal";
+import {
+  makeJevHistoryItem,
+  makeYouHistoryItem,
+  type MatchHistoryItem,
+} from "@/lib/game/match-history";
 import {
   archiveMatchShots,
   loadStoredPlayerShotHistory,
@@ -66,7 +70,7 @@ export function GameShell() {
   const [hoverCell, setHoverCell] = useState<{ row: number; col: number } | null>(
     null,
   );
-  const [journal, setJournal] = useState<JournalEntry[]>([]);
+  const [history, setHistory] = useState<MatchHistoryItem[]>([]);
   const [isJevThinking, setIsJevThinking] = useState(false);
   const [jevError, setJevError] = useState<string | null>(null);
   const [status, setStatus] = useState<string>("Place your fleet on the left board.");
@@ -211,7 +215,6 @@ export function GameShell() {
           }
           const chosen = jevResponse.chosen;
           const entry = toJournalEntry(currentState.moveCount + 1, jevResponse);
-          setJournal((prev) => [...prev, entry]);
 
           const outcome = jevShoot(
             currentState,
@@ -221,6 +224,13 @@ export function GameShell() {
           );
           currentState = outcome.state;
           currentView = outcome.playerView;
+          setHistory((prev) => [
+            ...prev,
+            makeJevHistoryItem({
+              journal: entry,
+              outcome: outcome.result.outcome,
+            }),
+          ]);
           setGame(currentState);
           setPlayerView(currentView);
 
@@ -294,6 +304,14 @@ export function GameShell() {
         makePlayerShotRecord({ row, col }, result.outcome),
       ];
       setMatchShots(nextMatchShots);
+      setHistory((prev) => [
+        ...prev,
+        makeYouHistoryItem({
+          index: prev.length,
+          label: cellLabel(row, col),
+          outcome: result.outcome,
+        }),
+      ]);
       saveStoredPlayerShotHistory(nextMatchShots, recentShots);
       const history = { thisMatch: nextMatchShots, recent: recentShots };
       const playerTargets = legalMoves(state.opponentView);
@@ -331,7 +349,7 @@ export function GameShell() {
     saveStoredPlayerShotHistory([], nextRecent);
     setGame(createNewGame());
     setPlayerView(createPlayerAttackView());
-    setJournal([]);
+    setHistory([]);
     setJevError(null);
     setIsJevThinking(false);
     setPredictionStatus("empty");
@@ -377,7 +395,7 @@ export function GameShell() {
 
   return (
     <div className="min-h-full bg-[#fefce4] px-4 py-8 sm:px-6">
-      <div className="mx-auto flex max-w-6xl flex-col gap-8">
+      <div className="mx-auto flex w-full max-w-[96rem] flex-col gap-8">
         <header className="text-center sm:text-left">
           <h1 className="text-3xl font-bold tracking-tight text-[#2c1810] sm:text-4xl">
             <span className="text-[#dc6b5e]">ship</span>{" "}
@@ -412,9 +430,10 @@ export function GameShell() {
           </div>
         )}
 
-        <div className="grid gap-8 lg:grid-cols-[1fr_320px]">
-          <div className="grid gap-8 md:grid-cols-2">
+        <div className="flex flex-col gap-8">
+          <div className="grid w-full min-w-0 gap-8 md:grid-cols-2">
             <div
+              className="min-w-0"
               onMouseLeave={() => setHoverCell(null)}
             >
               <GameBoard
@@ -465,7 +484,7 @@ export function GameShell() {
             />
           </div>
 
-          <div className="flex flex-col gap-4">
+          <div className="flex w-full min-w-0 flex-col gap-4">
             <PlayerShotPrediction
               status={predictionStatus}
               label={predictionLabel}
@@ -473,7 +492,7 @@ export function GameShell() {
               error={predictionError}
             />
             <MoveJournal
-              entries={journal}
+              history={history}
               thinking={isJevThinking}
               error={jevError}
             />
