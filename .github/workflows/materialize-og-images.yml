@@ -9,16 +9,18 @@ jobs:
       contents: write
     steps:
       - uses: actions/checkout@v4
-      - name: Decode JPEGs when both payloads exist
+      - name: Decode JPEGs when all chunks exist
         run: |
           set -euo pipefail
-          if [ ! -f tmp/og-image-en.jpg.b64 ] || [ ! -f tmp/og-image-pl.jpg.b64 ]; then
-            echo "payloads not ready yet"
+          en_dir=tmp/og-b64/en
+          pl_dir=tmp/og-b64/pl
+          if [ ! -f "$en_dir/c011" ] || [ ! -f "$pl_dir/c012" ]; then
+            echo "chunks not ready yet"
             exit 0
           fi
           mkdir -p public
-          base64 -d tmp/og-image-en.jpg.b64 > public/og-image-en.jpg
-          base64 -d tmp/og-image-pl.jpg.b64 > public/og-image-pl.jpg
+          cat $(ls "$en_dir"/c* | sort) | tr -d '\n' | base64 -d > public/og-image-en.jpg
+          cat $(ls "$pl_dir"/c* | sort) | tr -d '\n' | base64 -d > public/og-image-pl.jpg
           python3 - <<'PY'
           from pathlib import Path
           checks = {
@@ -30,9 +32,7 @@ jobs:
               assert data[:3] == b"\xff\xd8\xff", path
               assert len(data) == size, (path, len(data), size)
           PY
-          rm -f tmp/og-image-en.jpg.b64 tmp/og-image-pl.jpg.b64
-          rmdir tmp 2>/dev/null || true
-          rm -f .github/workflows/materialize-og-images.yml
+          rm -rf tmp .github/workflows/materialize-og-images.yml
           git config user.name "Pawel Boguslawski"
           git config user.email "bogusweb@users.noreply.github.com"
           git add public/og-image-en.jpg public/og-image-pl.jpg
