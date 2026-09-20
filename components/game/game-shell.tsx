@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import {
   FLEET_LENGTHS,
   autoPlacePlayerFleet,
@@ -525,6 +525,15 @@ export function GameShell() {
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
+  }, [game.phase]);
+
+  const previousPhase = useRef(game.phase);
+  useLayoutEffect(() => {
+    const from = previousPhase.current;
+    previousPhase.current = game.phase;
+    if (from === "placement" && game.phase === "playing") {
+      window.scrollTo({ top: 0, left: 0, behavior: "auto" });
+    }
   }, [game.phase]);
 
   useEffect(() => {
