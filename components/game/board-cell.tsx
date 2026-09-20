@@ -47,8 +47,8 @@ export function BoardCell({
 }: BoardCellProps) {
   const isShot = visual === "miss" || visual === "hit" || visual === "halo";
   const size = compact
-    ? "aspect-square h-auto w-full min-h-6"
-    : "aspect-square h-auto w-full min-h-7 sm:min-h-8";
+    ? "aspect-square h-auto w-full min-h-5 max-w-[2.55rem]"
+    : "aspect-square h-auto w-full min-h-6 max-w-[2.55rem] sm:min-h-7";
 
   return (
     <button
