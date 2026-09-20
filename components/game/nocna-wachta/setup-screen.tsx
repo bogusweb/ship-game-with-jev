@@ -80,6 +80,13 @@ export function SetupScreen({
 
       <div className="setup-workspace">
         <aside className="placement-controls">
+          <button
+            type="button"
+            className="primary placement-auto"
+            onClick={onAutoDeploy}
+          >
+            {t("setup.autoDeploy")}
+          </button>
           <div className="placement-step">
             <span className="step-num">01</span>
             <div>
@@ -141,9 +148,6 @@ export function SetupScreen({
             <kbd>R</kbd>
           </button>
           <div className="placement-utilities">
-            <button type="button" className="secondary" onClick={onAutoDeploy}>
-              {t("setup.autoDeploy")}
-            </button>
             <button type="button" className="text-btn" onClick={onClear}>
               {t("setup.clear")}
             </button>
