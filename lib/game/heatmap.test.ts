@@ -7,7 +7,10 @@ import {
   legalMoves,
 } from "./shooting";
 import {
+  describeAxisLock,
   describeShotCriterion,
+  knownAxisLocks,
+  offeredFireCells,
   placementOccupancy,
   remainingFleetFromSunk,
   scoreLegalShots,
@@ -81,5 +84,63 @@ describe("placement heatmap", () => {
     assert.ok(text.length <= 255);
     assert.match(text, /HUNT/);
     assert.match(text, /Fire at /);
+  });
+});
+
+describe("known-axis line targeting", () => {
+  it("offers only the two vertical line ends, not perpendicular flanks", () => {
+    const view = createOpponentView();
+    view.cells[4][4] = "hit";
+    view.cells[5][4] = "hit";
+    const offered = offeredFireCells(view, legalMoves(view));
+    const labels = offered
+      .map((c) => `${String.fromCharCode(65 + c.col)}${c.row + 1}`)
+      .sort();
+    assert.deepEqual(labels, ["E4", "E7"]);
+    assert.equal(offered.some((c) => c.row === 4 && c.col === 3), false, "D5 flank");
+    assert.equal(offered.some((c) => c.row === 4 && c.col === 5), false, "F5 flank");
+    assert.equal(offered.some((c) => c.row === 5 && c.col === 3), false, "D6 flank");
+    assert.equal(offered.some((c) => c.row === 5 && c.col === 5), false, "F6 flank");
+
+    const [lock] = knownAxisLocks(view);
+    assert.equal(lock?.axis, "vertical");
+    const { axisLine, extendLine } = describeAxisLock(view);
+    assert.equal(axisLine, "Known axis: vertical");
+    assert.match(extendLine, /E4/);
+    assert.match(extendLine, /E7/);
+  });
+
+  it("offers only the two horizontal line ends, not flanks", () => {
+    const view = createOpponentView();
+    view.cells[4][4] = "hit";
+    view.cells[4][5] = "hit";
+    const labels = offeredFireCells(view, legalMoves(view))
+      .map((c) => `${String.fromCharCode(65 + c.col)}${c.row + 1}`)
+      .sort();
+    assert.deepEqual(labels, ["D5", "G5"]);
+    const [lock] = knownAxisLocks(view);
+    assert.equal(lock?.axis, "horizontal");
+  });
+
+  it("includes the unknown gap on a collinear line", () => {
+    const view = createOpponentView();
+    view.cells[4][4] = "hit";
+    view.cells[6][4] = "hit";
+    const labels = offeredFireCells(view, legalMoves(view))
+      .map((c) => `${String.fromCharCode(65 + c.col)}${c.row + 1}`)
+      .sort();
+    assert.deepEqual(labels, ["E4", "E6", "E8"]);
+  });
+
+  it("still offers orthogonal neighbors of a single unresolved hit", () => {
+    const view = createOpponentView();
+    view.cells[4][4] = "hit";
+    const labels = offeredFireCells(view, legalMoves(view))
+      .map((c) => `${String.fromCharCode(65 + c.col)}${c.row + 1}`)
+      .sort();
+    assert.ok(labels.length > 4);
+    for (const keep of ["D5", "F5", "E4", "E6"]) {
+      assert.ok(labels.includes(keep), keep);
+    }
   });
 });
