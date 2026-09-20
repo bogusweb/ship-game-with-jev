@@ -40,7 +40,7 @@ export function PlayerShotPrediction({
         <p className="mt-1 text-sm text-[#2c1810]">
           Jev expects{" "}
           <span className="font-semibold text-[#4a9d93]">{label}</span>
-          {percent != null ? ` \u00b7 ${percent.toFixed(1)}%` : ""}
+          {percent != null ? ` · ${percent.toFixed(1)}%` : ""}
         </p>
       )}
     </div>
