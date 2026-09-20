@@ -584,6 +584,7 @@ export function GameShell() {
           predictionLabel={predictionLabel}
           predictionPercent={predictionPercent}
           predictionError={predictionFailed ? t("prediction.error") : null}
+          busy={isJevThinking}
         />
 
         <section className="mini-fleet">

@@ -12,6 +12,8 @@ export type JevCardProps = {
   predictionLabel?: string;
   predictionPercent?: number;
   predictionError?: string | null;
+  /** True while Jev is choosing a shot — do not swap the card layout. */
+  busy?: boolean;
 };
 
 export function JevCard({
@@ -20,18 +22,25 @@ export function JevCard({
   predictionLabel,
   predictionPercent,
   predictionError,
+  busy = false,
 }: JevCardProps) {
   const { t } = useLocale();
-  const ready = predictionStatus === "ready" && predictionLabel;
-
+  const showLabel =
+    Boolean(predictionLabel) && !predictionError && predictionStatus !== "error";
   const caption = predictionError
     ? predictionError
-    : predictionStatus === "loading"
-      ? t("prediction.loading")
-      : t("jev.predictsYourTarget");
+    : t("jev.predictsYourTarget");
+  const percentTitle =
+    showLabel && predictionPercent != null
+      ? t("prediction.percent", { value: predictionPercent.toFixed(1) }).trim()
+      : undefined;
 
   return (
-    <section className="jev-card" aria-label="Jev">
+    <section
+      className="jev-card"
+      aria-label="Jev"
+      aria-busy={busy || predictionStatus === "loading" || undefined}
+    >
       <div className="row">
         <div className="jev-avatar">
           <Icon name="jev" />
@@ -48,20 +57,15 @@ export function JevCard({
       </p>
       <div className="predict-line">
         <Icon name="spark" />
-        <span>
-          {caption}
-          {ready && predictionPercent != null ? (
-            <span className="block">
-              {t("prediction.percent", {
-                value: predictionPercent.toFixed(1),
-              }).replace(/^\s*·\s*/, "")}
-            </span>
-          ) : null}
-        </span>
-        {ready ? (
-          <strong>{predictionLabel}</strong>
+        <span className="predict-caption">{caption}</span>
+        {showLabel ? (
+          <strong className="predict-value" title={percentTitle}>
+            {predictionLabel}
+          </strong>
         ) : (
-          <span className="predict-pending">{t("jev.predictPending")}</span>
+          <span className="predict-value predict-pending">
+            {t("jev.predictPending")}
+          </span>
         )}
       </div>
     </section>

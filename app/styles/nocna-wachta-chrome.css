@@ -261,6 +261,7 @@
   line-height: 1.7;
   margin: 19px 0;
   color: #c8d6cb;
+  min-height: calc(1.7em * 2);
 }
 
 .night .predict-line {
@@ -271,6 +272,7 @@
   gap: 8px;
   font-size: 10px;
   color: var(--muted);
+  min-height: 38px;
 }
 
 .night .predict-line > svg {
@@ -279,17 +281,32 @@
   flex-shrink: 0;
 }
 
-.night .predict-line strong {
-  color: var(--accent);
+.night .predict-caption {
+  flex: 1;
+  min-width: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.night .predict-value {
+  margin-left: auto;
+  flex-shrink: 0;
+  min-width: 5.5rem;
+  min-height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  text-align: right;
   font-family: var(--font-space-grotesk), sans-serif;
   font-weight: 500;
   font-size: 20px;
-  margin-left: auto;
+  line-height: 1;
+  color: var(--accent);
 }
 
 .night .predict-line .predict-pending {
   font-size: 11px;
-  margin-left: auto;
   color: var(--muted);
 }
 
