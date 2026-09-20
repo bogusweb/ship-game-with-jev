@@ -178,7 +178,7 @@
   max-width: 1470px;
   margin: auto;
   display: grid;
-  grid-template-columns: 550px 1fr;
+  grid-template-columns: var(--sj-layout-column) 1fr;
   gap: 32px;
   padding-top: 27px;
 }

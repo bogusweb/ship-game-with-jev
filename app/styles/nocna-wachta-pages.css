@@ -260,7 +260,7 @@
   max-width: 1350px;
   margin: auto;
   display: grid;
-  grid-template-columns: 550px 1fr;
+  grid-template-columns: var(--sj-layout-column) 1fr;
   gap: 28px;
   align-items: start;
 }
