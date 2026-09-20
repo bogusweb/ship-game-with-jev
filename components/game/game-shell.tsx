@@ -1,11 +1,10 @@
-"use client";
+use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { Button } from "@/components/ui/button";
 import {
   BOARD_SIZE,
   FLEET_LENGTHS,
-  SHIP_NAMES,
   autoPlacePlayerFleet,
   cellLabel,
   createNewGame,
@@ -39,14 +38,84 @@ import {
   type PlayerNextShotResponse,
 } from "@/lib/jev/client";
 import { shipAtCell } from "@/lib/game/placement";
+import {
+  shipName,
+  translateEngineError,
+  useLocale,
+  type Translate,
+} from "@/lib/i18n";
 import type { CellVisual } from "./board-cell";
 import { GameBoard } from "./game-board";
+import { LanguageSwitcher } from "./language-switcher";
 import { MoveJournal } from "./move-journal";
 import {
   PlayerShotPrediction,
   type PredictionStatus,
 } from "./player-shot-prediction";
 import { TurnIndicator, turnKindFromState } from "./turn-indicator";
+
+type StatusState =
+  | { code: "placeFleet" }
+  | { code: "placing"; length: number; placed: number; total: number }
+  | { code: "placingClick"; length: number }
+  | { code: "fleetReady" }
+  | { code: "autoPlaced" }
+  | { code: "hitAgain" }
+  | { code: "missJevThinking" }
+  | { code: "sunkJevShip"; length: number }
+  | { code: "jevSunkYourShip"; length: number }
+  | { code: "jevHitAgain" }
+  | { code: "jevMissed" }
+  | { code: "won" }
+  | { code: "lost" }
+  | { code: "engine"; message: string }
+  | { code: "invalidPlacement" }
+  | { code: "invalidShot" };
+
+function formatStatus(t: Translate, status: StatusState): string {
+  switch (status.code) {
+    case "placeFleet":
+      return t("status.placeFleet");
+    case "placing":
+      return t("status.placing", {
+        ship: shipName(t, status.length),
+        length: status.length,
+        placed: status.placed,
+        total: status.total,
+      });
+    case "placingClick":
+      return t("status.placingClick", {
+        ship: shipName(t, status.length),
+        length: status.length,
+      });
+    case "fleetReady":
+      return t("status.fleetReady");
+    case "autoPlaced":
+      return t("status.autoPlaced");
+    case "hitAgain":
+      return t("status.hitAgain");
+    case "missJevThinking":
+      return t("status.missJevThinking");
+    case "sunkJevShip":
+      return t("status.sunkJevShip", { ship: shipName(t, status.length) });
+    case "jevSunkYourShip":
+      return t("status.jevSunkYourShip", { ship: shipName(t, status.length) });
+    case "jevHitAgain":
+      return t("status.jevHitAgain");
+    case "jevMissed":
+      return t("status.jevMissed");
+    case "won":
+      return t("status.won");
+    case "lost":
+      return t("status.lost");
+    case "engine":
+      return translateEngineError(t, status.message);
+    case "invalidPlacement":
+      return t("status.invalidPlacement");
+    case "invalidShot":
+      return t("status.invalidShot");
+  }
+}
 
 let sessionGate: Promise<void> | null = null;
 
@@ -84,6 +153,7 @@ async function postJev(request: JevShotRequest) {
 }
 
 export function GameShell() {
+  const { t } = useLocale();
   const [game, setGame] = useState<GameState>(() => createNewGame());
   const [playerView, setPlayerView] = useState<OpponentView>(() =>
     createPlayerAttackView(),
@@ -95,14 +165,14 @@ export function GameShell() {
   const [history, setHistory] = useState<MatchHistoryItem[]>([]);
   const [isJevThinking, setIsJevThinking] = useState(false);
   const [jevError, setJevError] = useState<string | null>(null);
-  const [status, setStatus] = useState<string>("Place your fleet on the left board.");
+  const [status, setStatus] = useState<StatusState>({ code: "placeFleet" });
   const [matchShots, setMatchShots] = useState<PlayerShotRecord[]>([]);
   const [recentShots, setRecentShots] = useState<PlayerShotRecord[]>([]);
   const [predictionStatus, setPredictionStatus] =
     useState<PredictionStatus>("empty");
   const [predictionLabel, setPredictionLabel] = useState<string | undefined>();
   const [predictionPercent, setPredictionPercent] = useState<number | undefined>();
-  const [predictionError, setPredictionError] = useState<string | null>(null);
+  const [predictionFailed, setPredictionFailed] = useState(false);
 
   const currentShipLength = nextShipLength(game.playerBoard);
   const placedCount = game.playerBoard.ships.length;
@@ -163,22 +233,24 @@ export function GameShell() {
       const next = placePlayerShip(game, { row, col }, orientation);
       setGame(next);
       if (next.phase === "playing") {
-        setStatus("Fleet ready! Fire at Jev's waters on the right.");
+        setStatus({ code: "fleetReady" });
       } else {
         const len = nextShipLength(next.playerBoard);
-        setStatus(
-          `Placing ${SHIP_NAMES[len ?? 2] ?? "ship"} (length ${len}). Click to place, R to rotate.`,
-        );
+        setStatus({ code: "placingClick", length: len ?? 2 });
       }
     } catch (e) {
-      setStatus(e instanceof Error ? e.message : "Invalid placement");
+      setStatus(
+        e instanceof Error
+          ? { code: "engine", message: e.message }
+          : { code: "invalidPlacement" },
+      );
     }
   };
 
   const handleAutoPlace = () => {
     const next = autoPlacePlayerFleet(game);
     setGame(next);
-    setStatus("Fleet auto-placed. Fire at Jev's waters on the right.");
+    setStatus({ code: "autoPlaced" });
   };
 
   const applyPrediction = useCallback((result: {
@@ -189,13 +261,11 @@ export function GameShell() {
       setPredictionStatus("ready");
       setPredictionLabel(result.prediction.label);
       setPredictionPercent(result.prediction.chosenPercent);
-      setPredictionError(null);
+      setPredictionFailed(false);
       return;
     }
     setPredictionStatus("error");
-    setPredictionError(
-      result.predictionError || "Could not predict your next shot.",
-    );
+    setPredictionFailed(true);
   }, []);
 
   const runJevTurn = useCallback(
@@ -257,22 +327,25 @@ export function GameShell() {
           setPlayerView(currentView);
 
           if (outcome.result.outcome === "sunk") {
-            setStatus(
-              `Jev sunk your ${SHIP_NAMES[outcome.result.shipLength ?? 2] ?? "ship"}!`,
-            );
+            setStatus({
+              code: "jevSunkYourShip",
+              length: outcome.result.shipLength ?? 2,
+            });
           } else if (outcome.result.outcome === "hit") {
-            setStatus("Jev hit — firing again…");
+            setStatus({ code: "jevHitAgain" });
           } else {
-            setStatus("Jev missed. Your turn.");
+            setStatus({ code: "jevMissed" });
           }
 
           if (currentState.phase === "lost") {
-            setStatus("Jev sank your fleet. Better luck next round!");
+            setStatus({ code: "lost" });
             break;
           }
         }
       } catch (e) {
-        setJevError(e instanceof Error ? e.message : "Jev could not choose a shot");
+        setJevError(
+          e instanceof Error ? e.message : "Jev could not choose a shot",
+        );
         if (!askedPrediction) {
           applyPrediction({
             prediction: null,
@@ -338,18 +411,18 @@ export function GameShell() {
       const history = { thisMatch: nextMatchShots, recent: recentShots };
       const playerTargets = legalMoves(state.opponentView);
       setPredictionStatus("loading");
-      setPredictionError(null);
+      setPredictionFailed(false);
 
       if (result.outcome === "sunk") {
-        setStatus(`Sunk! Jev's ${SHIP_NAMES[result.shipLength ?? 2] ?? "ship"} is gone.`);
+        setStatus({ code: "sunkJevShip", length: result.shipLength ?? 2 });
       } else if (result.outcome === "hit") {
-        setStatus("Hit! Fire again.");
+        setStatus({ code: "hitAgain" });
       } else {
-        setStatus("Miss. Jev is thinking…");
+        setStatus({ code: "missJevThinking" });
       }
 
       if (state.phase === "won") {
-        setStatus("You sank Jev's fleet. Victory!");
+        setStatus({ code: "won" });
         void runPredictionOnly(history, playerTargets, playerView);
         return;
       }
@@ -360,7 +433,11 @@ export function GameShell() {
         void runPredictionOnly(history, playerTargets, playerView);
       }
     } catch (e) {
-      setStatus(e instanceof Error ? e.message : "Invalid shot");
+      setStatus(
+        e instanceof Error
+          ? { code: "engine", message: e.message }
+          : { code: "invalidShot" },
+      );
     }
   };
 
@@ -377,8 +454,8 @@ export function GameShell() {
     setPredictionStatus("empty");
     setPredictionLabel(undefined);
     setPredictionPercent(undefined);
-    setPredictionError(null);
-    setStatus("Place your fleet on the left board.");
+    setPredictionFailed(false);
+    setStatus({ code: "placeFleet" });
   };
 
   useEffect(() => {
@@ -404,9 +481,12 @@ export function GameShell() {
 
   useEffect(() => {
     if (game.phase === "placement" && currentShipLength) {
-      setStatus(
-        `Placing ${SHIP_NAMES[currentShipLength] ?? "ship"} (length ${currentShipLength}). ${placedCount}/${FLEET_LENGTHS.length} placed. Press R to rotate.`,
-      );
+      setStatus({
+        code: "placing",
+        length: currentShipLength,
+        placed: placedCount,
+        total: FLEET_LENGTHS.length,
+      });
     }
   }, [game.phase, currentShipLength, placedCount]);
 
@@ -425,20 +505,25 @@ export function GameShell() {
   return (
     <div className="min-h-full bg-[#fefce4] px-4 py-8 sm:px-6">
       <div className="mx-auto flex w-full max-w-[96rem] flex-col gap-8">
-        <header className="text-center sm:text-left">
-          <h1 className="text-3xl font-bold tracking-tight text-[#2c1810] sm:text-4xl">
-            <span className="text-[#dc6b5e]">ship</span>{" "}
-            <span>game</span>{" "}
-            <span className="text-[#4a9d93]">with jev</span>
-          </h1>
-          <p className="mt-1 text-sm text-[#5c4a3a]/80">
-            A little game of human vs. instinct.
-          </p>
+        <header className="flex items-start justify-between gap-3">
+          <div className="min-w-0 text-left">
+            <h1 className="text-3xl font-bold tracking-tight text-[#2c1810] sm:text-4xl">
+              <span className="text-[#dc6b5e]">ship</span>{" "}
+              <span>game</span>{" "}
+              <span className="text-[#4a9d93]">with jev</span>
+            </h1>
+            <p className="mt-1 text-sm text-[#5c4a3a]/80">
+              {t("chrome.tagline")}
+            </p>
+          </div>
+          <LanguageSwitcher />
         </header>
 
         <TurnIndicator kind={turnKind} />
 
-        <p className="min-h-10 text-sm text-[#5c4a3a]/80">{status}</p>
+        <p className="min-h-10 text-sm text-[#5c4a3a]/80">
+          {formatStatus(t, status)}
+        </p>
 
         <div className="flex min-h-8 flex-wrap gap-3">
           {game.phase === "placement" ? (
@@ -451,13 +536,19 @@ export function GameShell() {
                   )
                 }
               >
-                Rotate ({orientation})
+                {t("action.rotate", {
+                  orientation: t(
+                    orientation === "horizontal"
+                      ? "orientation.horizontal"
+                      : "orientation.vertical",
+                  ),
+                })}
               </Button>
               <Button
                 className="bg-[#e8ba3f] text-[#2c1810] hover:bg-[#d9ab30]"
                 onClick={handleAutoPlace}
               >
-                Auto-place fleet
+                {t("action.autoPlace")}
               </Button>
             </>
           ) : null}
@@ -470,11 +561,11 @@ export function GameShell() {
               onMouseLeave={() => setHoverCell(null)}
             >
               <GameBoard
-                title="Your fleet"
+                title={t("board.yourFleet")}
                 subtitle={
                   game.phase === "placement"
-                    ? "Place ships — no touching, even diagonally"
-                    : "Jev fires here"
+                    ? t("board.yourFleet.place")
+                    : t("board.yourFleet.playing")
                 }
                 getCellVisual={playerBoardVisual}
                 showShips
@@ -491,19 +582,21 @@ export function GameShell() {
               />
               <p className="mt-2 min-h-4 text-xs text-[#5c4a3a]/60">
                 {game.phase === "placement" && hoverCell
-                  ? `Preview at ${cellLabel(hoverCell.row, hoverCell.col)}`
+                  ? t("status.previewAt", {
+                      label: cellLabel(hoverCell.row, hoverCell.col),
+                    })
                   : "\u00a0"}
               </p>
             </div>
 
             <GameBoard
-              title="Jev's waters"
+              title={t("board.jevWaters")}
               subtitle={
                 game.phase === "placement"
-                  ? "Locked until your fleet is placed"
+                  ? t("board.jevWaters.locked")
                   : game.phase === "playing" && !gameOver
-                    ? "Pick a square to fire"
-                    : "Match over"
+                    ? t("board.jevWaters.fire")
+                    : t("board.jevWaters.over")
               }
               getCellVisual={jevBoardVisual}
               remainingLengths={jevRemaining}
@@ -526,12 +619,12 @@ export function GameShell() {
               status={predictionStatus}
               label={predictionLabel}
               percent={predictionPercent}
-              error={predictionError}
+              error={predictionFailed ? t("prediction.error") : null}
             />
             <MoveJournal
               history={history}
               thinking={isJevThinking}
-              error={jevError}
+              error={jevError ? translateEngineError(t, jevError) : null}
             />
           </div>
         </div>
@@ -543,13 +636,13 @@ export function GameShell() {
               className="bg-[#e8ba3f] text-[#2c1810] hover:bg-[#d9ab30]"
               onClick={handleNewGame}
             >
-              {gameOver ? "Another round" : "Restart game"}
+              {gameOver ? t("action.anotherRound") : t("action.restart")}
             </Button>
           ) : null}
         </div>
 
         <footer className="text-center text-xs text-[#5c4a3a]/50">
-          Jev by{" "}
+          {t("footer.jevBy")}{" "}
           <a
             href="https://typesafe.ai"
             className="text-[#4a9d93] hover:underline"
