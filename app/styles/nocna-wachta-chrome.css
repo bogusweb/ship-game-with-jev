@@ -315,7 +315,7 @@
   border-radius: var(--sj-radius-card);
   overflow: hidden;
   /* Compact mockup-B inset inside Paweł's 550px sidebar — not a full 10×10. */
-  max-width: 296px;
+  max-width: var(--sj-layout-sidebar);
   width: 100%;
 }
 
@@ -349,7 +349,7 @@
 }
 
 .night .mini-fleet .board-art {
-  max-width: 270px;
+  max-width: var(--sj-layout-mini-board);
   margin: 0 auto -12px;
 }
 
