@@ -37,7 +37,7 @@ import {
   type JevShotRequest,
   type JevShotResponse,
   type PlayerNextShotResponse,
-} from "@/lib/jev/shot";
+} from "@/lib/jev/client";
 import { shipAtCell } from "@/lib/game/placement";
 import type { CellVisual } from "./board-cell";
 import { GameBoard } from "./game-board";
@@ -48,15 +48,37 @@ import {
 } from "./player-shot-prediction";
 import { TurnIndicator, turnKindFromState } from "./turn-indicator";
 
+let sessionGate: Promise<void> | null = null;
+
+function ensurePlaySession() {
+  if (!sessionGate) {
+    sessionGate = fetch("/api/jev/session", { credentials: "same-origin" })
+      .then(() => undefined)
+      .catch(() => undefined);
+  }
+  return sessionGate;
+}
+
 async function postJev(request: JevShotRequest) {
+  await ensurePlaySession();
   const res = await fetch("/api/jev/shot", {
     method: "POST",
+    credentials: "same-origin",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(request),
   });
   if (!res.ok) {
     const data = await res.json().catch(() => ({}));
-    throw new Error(data.error ?? `Jev API failed (${res.status})`);
+    if (res.status === 429) {
+      throw new Error("Too many requests. Try again in a moment.");
+    }
+    if (res.status === 403) {
+      sessionGate = null;
+      throw new Error("Could not start a play session. Refresh and try again.");
+    }
+    throw new Error(
+      typeof data.error === "string" ? data.error : `Jev API failed (${res.status})`,
+    );
   }
   return res.json();
 }
@@ -367,6 +389,10 @@ export function GameShell() {
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
+  }, []);
+
+  useEffect(() => {
+    void ensurePlaySession();
   }, []);
 
   useEffect(() => {
