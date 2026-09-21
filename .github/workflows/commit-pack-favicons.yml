@@ -1,0 +1,44 @@
+name: Commit pack favicon rasters
+
+on:
+  push:
+    branches:
+      - cursor/marketing-favicons-78e9
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  commit-pack-favicons:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+      - run: npm ci
+      - name: Materialize pack ICO and PNG
+        run: npx tsx -e "import { materializePackIcons } from './lib/brand/materialize-pack-icons.ts'; materializePackIcons();"
+      - name: Commit pack rasters when missing from git
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -- \
+            public/favicon.ico \
+            public/apple-touch-icon.png \
+            public/brand/favicons/favicon.ico \
+            public/brand/favicons/apple-touch-icon.png \
+            public/brand/favicons/favicon-16x16.png \
+            public/brand/favicons/favicon-32x32.png \
+            public/brand/favicons/favicon-48x48.png \
+            public/brand/favicons/icon-192.png \
+            public/brand/favicons/icon-512.png \
+            public/brand/favicons/icon-maskable-512.png
+          if git diff --cached --quiet; then
+            echo "Pack rasters already tracked"
+            exit 0
+          fi
+          git commit -m "fix: commit marketing pack favicon.ico and Apple touch rasters"
+          git push
