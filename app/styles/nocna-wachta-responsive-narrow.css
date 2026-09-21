@@ -186,7 +186,7 @@
     margin-bottom: 10px;
     justify-content: flex-start;
   }
-  .night .placement-quick-actions .secondary {
+  .night .placement-quick-actions .primary {
     flex: 0 1 230px;
   }
   .night .placement-map-header {
@@ -306,7 +306,7 @@
   .night .placement-auto {
     min-width: 0;
   }
-  .night .placement-quick-actions .secondary {
+  .night .placement-quick-actions .primary {
     flex: 1;
     min-width: 0;
   }
