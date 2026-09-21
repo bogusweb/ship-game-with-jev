@@ -61,8 +61,8 @@ describe("marketing pack icons", () => {
   it("writes App Router and public icon files", () => {
     const root = join(process.cwd());
     materializePackIcons(root);
-    const ico = readFileSync(join(root, "app/favicon.ico"));
-    const apple = readFileSync(join(root, "app/apple-icon.png"));
+    const ico = readFileSync(join(root, "public/favicon.ico"));
+    const apple = readFileSync(join(root, "public/apple-touch-icon.png"));
     const png192 = readFileSync(join(root, "public/brand/favicons/icon-192.png"));
     assert.equal(
       createHash("sha256").update(ico).digest("hex"),
