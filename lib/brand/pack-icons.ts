@@ -1,7 +1,8 @@
 /**
  * Exact raster/ICO bytes from the Sink Jev marketing pack (`favicons/`).
- * next.config.ts materializes these into App Router icon files and
- * `public/brand/favicons/` so PNG/ICO stay bit-identical to the pack.
+ * next.config.ts materializes these into `public/favicon.ico`,
+ * `public/apple-touch-icon.png`, and `public/brand/favicons/` so PNG/ICO
+ * stay bit-identical to the pack.
  */
 import { FAVICON_ICO } from "./pack-icon-bytes/favicon-ico";
 import { APPLE_TOUCH_ICON_PNG } from "./pack-icon-bytes/apple-touch-icon-png";
