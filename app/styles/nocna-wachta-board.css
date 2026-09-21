@@ -17,18 +17,16 @@
   stroke-width: 1.4;
 }
 
-.night .board-art .cell:hover,
-.night .board-art .cell:focus,
-.night .board-art .cell:focus-visible {
+.night .board-art .cell:hover {
   fill: var(--sj-accent);
   stroke: var(--sj-accent);
   fill-opacity: 0.17;
   stroke-opacity: 0.7;
 }
 
+.night .board-art .cell:focus,
 .night .board-art .cell:focus-visible {
-  outline: 3px solid #ec9c54;
-  outline-offset: 3px;
+  outline: none;
 }
 
 .board-art .cell.fired {
