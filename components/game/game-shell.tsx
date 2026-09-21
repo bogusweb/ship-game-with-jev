@@ -446,11 +446,11 @@ export function GameShell() {
 
   const fireAt = (row: number, col: number) => {
     if (!canSelect(row, col)) return;
+    setSelected(null);
 
     try {
       const { state, result } = playerShoot(game, row, col);
       setGame(state);
-      setSelected(null);
 
       const nextMatchShots = [
         ...matchShots,
@@ -510,10 +510,27 @@ export function GameShell() {
     setStatus({ code: "targetSelected", label: cellLabel(row, col) });
   };
 
+  const handleCellConfirm = (row: number, col: number) => {
+    if (!canSelect(row, col)) return;
+    if (fireOnClick) {
+      fireAt(row, col);
+      return;
+    }
+    if (selected?.row === row && selected.col === col) {
+      fireAt(row, col);
+      return;
+    }
+    setSelected({ row, col });
+    setStatus({ code: "targetSelected", label: cellLabel(row, col) });
+  };
+
   const handleFireOnClickChange = (value: boolean) => {
     setFireOnClick(value);
     saveFireOnClick(value);
+    setSelected(null);
   };
+
+  const lockedTarget = fireOnClick ? null : selected;
 
   const handleFire = () => {
     if (!selected) return;
@@ -579,6 +596,12 @@ export function GameShell() {
     setRecentShots(recent);
     saveStoredPlayerShotHistory([], recent);
   }, []);
+
+  useEffect(() => {
+    if (game.turn !== "player" || isJevThinking) {
+      setSelected(null);
+    }
+  }, [game.turn, isJevThinking]);
 
   /* Derived view data ----------------------------------------------------- */
 
@@ -688,10 +711,10 @@ export function GameShell() {
             ariaLabel={t("board.jevWaters")}
             cellState={(row, col) => game.opponentView.cells[row][col]}
             ships={revealedOpponentShips(game.jevBoard)}
-            selected={selected}
+            selected={lockedTarget}
             predicted={scan ? predictionCell : null}
             onCellActivate={handleSelect}
-            onCellConfirm={fireAt}
+            onCellConfirm={handleCellConfirm}
             isCellEnabled={canSelect}
             cellHint={(row, col, state) =>
               state === "unknown"
@@ -714,7 +737,7 @@ export function GameShell() {
         </div>
 
         <AttackConsole
-          selected={selected}
+          selected={lockedTarget}
           phase={game.phase}
           jevThinking={isJevThinking}
           fireOnClick={fireOnClick}
