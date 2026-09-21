@@ -90,19 +90,30 @@ npm run start
 npm run lint
 ```
 
-## Deploy on Netlify
+## Deploy (mydevil s9)
 
-Production play is [sinkjev.com](https://sinkjev.com).
+Production: [sinkjev.com](https://sinkjev.com) and [api.sinkjev.com](https://api.sinkjev.com) on mydevil **s9** (FreeBSD, NGiNX + Passenger) — **not** Netlify.
 
-1. Connect this repository to Netlify.
-2. Build settings are defined in `netlify.toml` (`npm run build` + `@netlify/plugin-nextjs`).
-3. For the Jev AI proxy, set server-side environment variables (never commit them, never prefix with `NEXT_PUBLIC_`):
-   - `SHIP_GAME_TYPESAFE_API_KEY` — TypeSafe/Jev key. Used only in `/api/jev/shot`.
-   - `SHIP_GAME_SESSION_SECRET` — optional HMAC secret for play-session cookies. If omitted, derived from the API key.
-   - `SHIP_GAME_JEV_DAILY_BUDGET` — max paid Jev calls per UTC day (default `2000`). Extra turns fall back to the local heuristic.
-   - `SHIP_GAME_JEV_IP_HOURLY` / `SHIP_GAME_JEV_SESSION_BUDGET` — per-IP and per-browser paid caps.
-   - `SHIP_GAME_JEV_DISABLED=1` — kill switch; play continues with fallback only.
-   - `SHIP_GAME_LIVE_JEV_TESTS=1` — opt-in; `npm test` never calls TypeSafe unless this is set.
+**Build locally, ship artifacts only.** On your machine: `npm ci` and `npm run build`. Rsync the dist (`.next`, `public`, `app.js`, `package.json`, `package-lock.json`, sanitized `next.config.ts`) to both vhosts. On s9 run `npm ci --omit=dev` only when the lockfile changes — **never** `next build` on the server. Do not rsync Mac/Linux `node_modules` (native SWC binaries differ on FreeBSD).
+
+```bash
+chmod +x deploy-sinkjev.sh
+./deploy-sinkjev.sh
+```
+
+Full runbook: [`docs/deploy.md`](docs/deploy.md).
+
+Server-side secrets live in `~/.bash_profile` on s9 (never commit, never prefix with `NEXT_PUBLIC_`):
+
+- `SHIP_GAME_TYPESAFE_API_KEY` — TypeSafe/Jev key for `/api/jev/shot`.
+- `SHIP_GAME_SESSION_SECRET` — optional HMAC for play-session cookies (defaults from API key).
+- `SHIP_GAME_JEV_DAILY_BUDGET`, `SHIP_GAME_JEV_IP_HOURLY`, `SHIP_GAME_JEV_SESSION_BUDGET` — cost guards.
+- `SHIP_GAME_JEV_DISABLED=1` — kill switch; heuristic fallback only.
+- `SHIP_GAME_LIVE_JEV_TESTS=1` — opt-in live Jev calls in tests.
+
+**Config warning:** do not upload a `next.config.ts` that imports `lib/brand/materialize-pack-icons`, and do not rsync `next.config.compiled.js` from Mac. The deploy script strips that import and deletes compiled config on s9. Use `./deploy-sinkjev.sh --fix-config` if Passenger returns `ERR_MODULE_NOT_FOUND …materialize-pack-icons`.
+
+`netlify.toml` and `netlify/functions/` remain for reference or alternate hosting; production uses Passenger `app.js` + the local-build flow above.
 
 The shot proxy keeps the API key on the server, issues a short-lived HttpOnly session cookie (`GET /api/jev/session`), rejects cross-origin calls in production, and validates the board payload. Localhost / `127.0.0.1` are never blocked. The proxy does not 429 burst fire — a match’s HIT chain and fallback shots must stay playable.
 
@@ -117,7 +128,7 @@ Jev uses the `/api/jev/shot` proxy. The API key never leaves the server. Without
 
 ## Project stages
 
-1. **Scaffold** — Next.js + Tailwind + shadcn, Netlify-ready
+1. **Scaffold** — Next.js + Tailwind + shadcn
 2. **Game rules engine** — 10×10 board, fleet placement, no-touch rule
 3. **UI** — fleet placement, dual boards, Jev move journal
 4. **Jev backend proxy** — secure API integration
