@@ -90,7 +90,7 @@ export function SetupScreen({
           <div className="placement-quick-actions">
             <button
               type="button"
-              className="secondary placement-auto"
+              className="primary placement-auto"
               onClick={onAutoDeploy}
             >
               {t("setup.autoDeploy")}
