@@ -62,6 +62,20 @@ describe("marketing pack logotype in chrome", () => {
   it("replaces nocna-wachta ikona-logo with the pack lime symbol", () => {
     assert.equal(sha256("public/nocna-wachta/ikona-logo.svg"), PACK_SYMBOL_LIME);
   });
+
+  it("renders the pack logotype at twice the original CSS size", () => {
+    const css = readFileSync("app/styles/nocna-wachta-logo.css", "utf8");
+    assert.match(css, /\.wordmark-logo-full[\s\S]*?height:\s*68px/);
+    assert.match(css, /max-width:\s*450px[\s\S]*?\.wordmark-logo-symbol[\s\S]*?height:\s*56px/);
+    assert.doesNotMatch(css, /height:\s*34px/);
+    assert.doesNotMatch(css, /height:\s*28px/);
+    const src = readFileSync("components/game/nocna-wachta/chrome.tsx", "utf8");
+    const start = src.indexOf("export function TopBar");
+    const end = src.indexOf("export type TurnPillKind");
+    const topBar = src.slice(start, end);
+    assert.doesNotMatch(topBar, /<a className="wordmark"/);
+    assert.doesNotMatch(topBar, /href=["']\/["']/);
+  });
 });
 
 describe("served pack favicon rasters", () => {
