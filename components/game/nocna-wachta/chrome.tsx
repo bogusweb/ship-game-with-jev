@@ -32,13 +32,22 @@ export function TopBar({
   const { t } = useLocale();
   return (
     <header className="topbar">
-      <div className="wordmark">
-        <Icon name="logo" />
-        <span>
-          {t("chrome.wordmark")}
-          <span className="word-dot">.</span>
-        </span>
-      </div>
+      <a className="wordmark" href="/" aria-label="Sink Jev">
+        <img
+          className="wordmark-logo wordmark-logo-full"
+          src="/brand/logo/logo-horizontal-on-dark.svg"
+          alt="Sink Jev"
+          width={580}
+          height={180}
+        />
+        <img
+          className="wordmark-logo wordmark-logo-symbol"
+          src="/brand/logo/symbol-lime.svg"
+          alt=""
+          width={256}
+          height={256}
+        />
+      </a>
       <nav className="top-nav" aria-label={t("meta.title")}>
         <span className="status-online row">
           <span className="dot" /> {t("chrome.jevLlm")}

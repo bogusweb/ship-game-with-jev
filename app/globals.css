@@ -9,6 +9,7 @@
 @import "./styles/nocna-wachta-pages.css";
 @import "./styles/nocna-wachta-responsive-wide.css";
 @import "./styles/nocna-wachta-responsive-narrow.css";
+@import "./styles/nocna-wachta-logo.css";
 
 @custom-variant dark (&:is(.dark *));
 
