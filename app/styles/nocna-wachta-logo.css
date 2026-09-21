@@ -1,0 +1,36 @@
+/* Pack logotype in the Nocna wachta header (INTEGRACJA.md). */
+
+.night .wordmark {
+  display: flex;
+  align-items: center;
+  text-decoration: none;
+  color: inherit;
+  gap: 0;
+  letter-spacing: 0;
+  font-weight: 400;
+  font-size: 0;
+  white-space: nowrap;
+}
+
+.night .wordmark-logo-full {
+  display: block;
+  height: 34px;
+  width: auto;
+}
+
+.night .wordmark-logo-symbol {
+  display: none;
+  height: 34px;
+  width: 34px;
+}
+
+@media (max-width: 450px) {
+  .night .wordmark-logo-full {
+    display: none;
+  }
+  .night .wordmark-logo-symbol {
+    display: block;
+    height: 28px;
+    width: 28px;
+  }
+}
