@@ -1,4 +1,4 @@
-import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
+import { mkdirSync, readFileSync, unlinkSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { PACK_ICON_FILES } from "./pack-icons";
 
@@ -9,6 +9,15 @@ function writeIfChanged(path: string, buf: Buffer) {
     // File is missing or unreadable; write it.
   }
   writeFileSync(path, buf);
+}
+
+function unlinkIfPresent(path: string) {
+  try {
+    unlinkSync(path);
+  } catch (err) {
+    const e = err as NodeJS.ErrnoException;
+    if (e.code !== "ENOENT") throw err;
+  }
 }
 
 /** Write pack ICO/PNG files for Next.js metadata conventions and `/brand/favicons/`. */
@@ -25,4 +34,7 @@ export function materializePackIcons(root = process.cwd()) {
   );
   writeIfChanged(join(root, "public/favicon.ico"), faviconIco);
   writeIfChanged(join(root, "public/apple-touch-icon.png"), appleTouch);
+  // Older boots wrote these under app/; Next 500s if they coexist with public/.
+  unlinkIfPresent(join(root, "app/favicon.ico"));
+  unlinkIfPresent(join(root, "app/apple-icon.png"));
 }

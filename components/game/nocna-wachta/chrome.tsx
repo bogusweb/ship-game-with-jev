@@ -32,7 +32,7 @@ export function TopBar({
   const { t } = useLocale();
   return (
     <header className="topbar">
-      <a className="wordmark" href="/" aria-label="Sink Jev">
+      <div className="wordmark" aria-label="Sink Jev">
         <img
           className="wordmark-logo wordmark-logo-full"
           src="/brand/logo/logo-horizontal-on-dark.svg"
@@ -47,7 +47,7 @@ export function TopBar({
           width={256}
           height={256}
         />
-      </a>
+      </div>
       <nav className="top-nav" aria-label={t("meta.title")}>
         <span className="status-online row">
           <span className="dot" /> {t("chrome.jevLlm")}

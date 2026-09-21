@@ -47,6 +47,8 @@ describe("marketing pack logotype in chrome", () => {
     assert.match(topBar, /alt=["']Sink Jev["']/);
     assert.doesNotMatch(topBar, /Icon name="logo"/);
     assert.doesNotMatch(topBar, /chrome\.wordmark/);
+    assert.doesNotMatch(topBar, /<a className="wordmark"/);
+    assert.doesNotMatch(topBar, /href=["']\/["']/);
   });
 
   it("serves pack logotype SVGs under public/brand/logo", () => {

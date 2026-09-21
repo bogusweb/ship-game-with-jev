@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { createHash } from "node:crypto";
-import { readFileSync } from "node:fs";
+import { existsSync, readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { describe, it } from "node:test";
 import { materializePackIcons } from "./materialize-pack-icons";
@@ -58,8 +58,10 @@ describe("marketing pack icons", () => {
     }
   });
 
-  it("writes App Router and public icon files", () => {
+  it("writes public pack icons and removes leftover App Router rasters", () => {
     const root = join(process.cwd());
+    writeFileSync(join(root, "app/favicon.ico"), Buffer.from("stale"));
+    writeFileSync(join(root, "app/apple-icon.png"), Buffer.from("stale"));
     materializePackIcons(root);
     const ico = readFileSync(join(root, "public/favicon.ico"));
     const apple = readFileSync(join(root, "public/apple-touch-icon.png"));
@@ -76,5 +78,7 @@ describe("marketing pack icons", () => {
       createHash("sha256").update(png192).digest("hex"),
       PACK_HASHES["icon-192.png"].sha256,
     );
+    assert.equal(existsSync(join(root, "app/favicon.ico")), false);
+    assert.equal(existsSync(join(root, "app/apple-icon.png")), false);
   });
 });
