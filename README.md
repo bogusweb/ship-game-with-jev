@@ -1,16 +1,58 @@
+<p align="center">
+  <img src="docs/readme-hero-jev-predicts.png" alt="sink jev. Jev predicts. You surprise. sinkjev.com" width="100%" />
+</p>
+
 # Ship Game with Jev
 
-Browser proof of concept for **Battleship vs Jev**. The production look is **Nocna wachta**: dark sea greens, a lime accent, and a flat top-down 10 × 10 board. Ships and water are 2D. The fleet shape is `4, 3, 3, 2, 2, 2, 1, 1, 1, 1` and ships still cannot touch, including diagonally.
+Play **Battleship vs TypeSafe Jev** at **[sinkjev.com](https://sinkjev.com)**.
+
+The production look is **Nocna wachta**: dark sea greens, a lime accent, and a flat top-down 10 × 10 board. Ships and water are 2D. The play UI is English and Polish (`EN` / `PL` in the header). This README stays English.
+
+Fleet lengths are `4, 3, 3, 2, 2, 2, 1, 1, 1, 1`. Ships cannot touch, including diagonally. After a sink, the eight-neighborhood is halo and leaves the legal-move set.
+
+Jev hunts from a remaining-fleet occupancy **heatmap** (checkerboard hunt; once two hits share an axis he fires only at the line ends). He also predicts your next cell. That percentage is a **shot preference**, not a hit chance.
 
 ## Gameplay
 
-A short playthrough (~34s): auto-place the fleet, fire on Jev’s waters, HIT and MISS, remaining unsunk ships, whose-turn badge, and the “Jev expects …” line.
+A short playthrough (~17s): auto-deploy the fleet, lock a cell on Jev’s waters, **Fire**, then HIT / MISS, the operations log, whose-turn pill, and Jev’s next-shot prediction.
 
 <video src="docs/demo.mp4" controls width="100%" preload="metadata">
-  A 34-second gameplay recording is at <a href="docs/demo.mp4">docs/demo.mp4</a>.
+  A gameplay recording is at <a href="docs/demo.mp4">docs/demo.mp4</a>.
 </video>
 
-The same recording lives at [`docs/demo.mp4`](docs/demo.mp4). After a clone, open that file or this page on GitHub.
+The same file lives at [`docs/demo.mp4`](docs/demo.mp4). After a clone, open that file or this page on GitHub.
+
+## Screenshots
+
+### Deploy the fleet
+
+Click a ship, then a cell (`R` rotates), or **Auto-deploy fleet**. Battle starts when all ten ships are placed.
+
+![Fleet setup — Nocna wachta](docs/setup.png)
+
+### Battle
+
+Your fleet sits on the left. Fire on Jev’s waters on the right. The Jev card shows his line and the cell he predicts you will aim at next. Toggle **Jev's predicted target** to paint his hunt/heatmap guess on the grid.
+
+![Desktop battle — opponent waters and Jev card](docs/desktop-battle.png)
+
+Jev’s operations log shows heatmap-backed shot preferences (not a fabricated hit chance) and whether the shot came **from Jev** or the local heuristic.
+
+![Mid-match boards, prediction, and Jev journal](docs/battle-journal.png)
+
+### Mobile
+
+On a narrow viewport the opponent board and Fire control come first; your fleet and the operations log stack below.
+
+![Mobile battle](docs/mobile-battle.png)
+
+### Outcome
+
+Sink all of Jev’s ships to win. If he sinks yours first, the fleet report still shows the board.
+
+![Player victory](docs/player-win.png)
+
+![Jev victory](docs/jev-win.png)
 
 ## Stack
 
@@ -33,7 +75,7 @@ npm run dev
 
 Open [http://localhost:4317](http://localhost:4317).
 
-The play UI is English and Polish. Use the **EN / PL** control in the header. The choice is stored in the browser (`localStorage`). English is the default unless the browser language is Polish. This README stays English.
+The language control stores the choice in `localStorage`. English is the default unless the browser language is Polish.
 
 ## Build
 
@@ -50,6 +92,8 @@ npm run lint
 
 ## Deploy on Netlify
 
+Production play is [sinkjev.com](https://sinkjev.com).
+
 1. Connect this repository to Netlify.
 2. Build settings are defined in `netlify.toml` (`npm run build` + `@netlify/plugin-nextjs`).
 3. For the Jev AI proxy, set server-side environment variables (never commit them, never prefix with `NEXT_PUBLIC_`):
@@ -65,21 +109,11 @@ The shot proxy keeps the API key on the server, issues a short-lived HttpOnly se
 ## Play
 
 1. Deploy your fleet on the setup screen (click to place, **R** to rotate, or **Auto-deploy fleet**). Start battle only when all ten ships are placed.
-2. On Jev’s waters, **Fire on click** is on by default — click a cell to shoot. Turn it off to lock a target and confirm with **Fire**. Hits let you fire again; misses hand off to Jev.
-3. The left card shows Jev’s status and his predicted next cell. That cell percentage is a shot preference, not a hit chance.
+2. On Jev’s waters, click a cell to lock the target, then **Fire**. Hits let you fire again; misses hand off to Jev.
+3. The left card shows Jev’s status and his predicted next cell. Toggle **Jev's predicted target** to see that guess on the grid. The percentage is a shot preference, not a hit chance.
 4. Sink all of Jev's ships to win — or lose if Jev sinks yours first. **New game** returns to fleet setup.
 
-Jev uses the `/api/jev/shot` proxy. The API key never leaves the server. Without a key, or when cost guards trip, a local heuristic fallback still plays.
-
-## Hunt-mode verification
-
-Live hunt after heatmap-backed fire Choice. The journal reports **H3 · 82.0% from Jev** (not the heuristic fallback), and the shots sit on the checkerboard instead of walking A1→B1.
-
-![Fleet auto-placed, empty hunt](docs/jev-hunt-after-autoplace.png)
-
-![Mid-game boards and journal](docs/jev-hunt-midgame-board.png)
-
-The same mid-game frame is also saved as [`docs/jev-hunt-journal-jev-source.png`](docs/jev-hunt-journal-jev-source.png).
+Jev uses the `/api/jev/shot` proxy. The API key never leaves the server. Without a key, or when cost guards trip, a local heuristic fallback still plays. Hunt shots use the occupancy heatmap so Jev does not walk the grid A1→B1.
 
 ## Project stages
 

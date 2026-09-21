@@ -87,6 +87,18 @@ export function SetupScreen({
               <p>{t("setup.step1Body")}</p>
             </div>
           </div>
+          <div className="placement-quick-actions">
+            <button
+              type="button"
+              className="secondary placement-auto"
+              onClick={onAutoDeploy}
+            >
+              {t("setup.autoDeploy")}
+            </button>
+            <button type="button" className="text-btn" onClick={onClear}>
+              {t("setup.clear")}
+            </button>
+          </div>
           <div className="placement-roster">
             {FLEET_LENGTHS.map((length, index) => {
               const isPlaced = draft[index] !== null;
@@ -140,18 +152,6 @@ export function SetupScreen({
             </span>
             <kbd>R</kbd>
           </button>
-          <div className="placement-utilities">
-            <button
-              type="button"
-              className="secondary placement-auto"
-              onClick={onAutoDeploy}
-            >
-              {t("setup.autoDeploy")}
-            </button>
-            <button type="button" className="text-btn" onClick={onClear}>
-              {t("setup.clear")}
-            </button>
-          </div>
         </aside>
 
         <section className="placement-map">
