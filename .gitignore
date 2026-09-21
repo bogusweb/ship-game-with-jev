@@ -42,9 +42,3 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
-
-# Raster/ICO copies written from lib/brand/pack-icons.ts
-/app/favicon.ico
-/app/apple-icon.png
-/public/brand/favicons/*.png
-/public/brand/favicons/favicon.ico
