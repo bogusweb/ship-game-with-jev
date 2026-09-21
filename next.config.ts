@@ -1,7 +1,4 @@
 import type { NextConfig } from "next";
-import { materializePackIcons } from "./lib/brand/materialize-pack-icons";
-
-materializePackIcons();
 
 const securityHeaders = [
   { key: "X-Content-Type-Options", value: "nosniff" },
