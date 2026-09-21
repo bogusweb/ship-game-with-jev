@@ -59,6 +59,7 @@
 
 .night .theater {
   position: relative;
+  outline: none;
   background: radial-gradient(
     ellipse at 50% 48%,
     #254136 0,
