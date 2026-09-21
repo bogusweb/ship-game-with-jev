@@ -3,8 +3,8 @@ import { execFileSync } from "node:child_process";
 import { createHash } from "node:crypto";
 import { readFileSync } from "node:fs";
 import { describe, it } from "node:test";
+import { materializePackIcons } from "./materialize-pack-icons";
 import AppleIcon from "../../app/apple-icon";
-import { GET as getFaviconIco } from "../../app/favicon.ico/route";
 
 const ROOT = process.cwd();
 
@@ -65,7 +65,6 @@ describe("marketing pack logotype in chrome", () => {
 describe("served pack favicon rasters", () => {
   const trackedSvg = [
     "app/icon.svg",
-    "app/favicon.ico/route.ts",
     "app/apple-icon.ts",
     "public/brand/favicons/favicon.svg",
   ];
@@ -86,11 +85,12 @@ describe("served pack favicon rasters", () => {
     }
   });
 
-  it("serves pack favicon.ico and apple-touch bytes from App Router", async () => {
-    const res = getFaviconIco();
-    const ico = Buffer.from(await res.arrayBuffer());
+  it("serves pack favicon.ico from public and apple-touch from App Router", async () => {
+    materializePackIcons(ROOT);
+    const ico = readFileSync("public/favicon.ico");
     assert.equal(createHash("sha256").update(ico).digest("hex"), PACK_FAVICON_ICO);
-    const apple = Buffer.from(AppleIcon());
+    const res = AppleIcon();
+    const apple = Buffer.from(await res.arrayBuffer());
     assert.equal(
       createHash("sha256").update(apple).digest("hex"),
       PACK_APPLE_TOUCH,

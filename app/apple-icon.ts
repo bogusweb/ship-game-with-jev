@@ -5,7 +5,8 @@ export const contentType = "image/png";
 
 /** Apple touch icon from the marketing pack, not generated artwork. */
 export default function AppleIcon() {
-  return new Uint8Array(
-    Buffer.from(PACK_ICON_FILES["apple-touch-icon.png"], "base64"),
-  );
+  const body = Buffer.from(PACK_ICON_FILES["apple-touch-icon.png"], "base64");
+  return new Response(body, {
+    headers: { "Content-Type": "image/png" },
+  });
 }
