@@ -695,7 +695,20 @@ export function GameShell() {
           <TurnPill kind={turnKind} move={Math.max(1, game.moveCount)} />
         </header>
 
-        <div className="theater">
+        <div
+          className="theater"
+          onPointerDown={(event) => {
+            if (fireOnClick) {
+              const active = document.activeElement;
+              if (
+                active instanceof Element &&
+                active.closest(".battle-main .board-art .cell")
+              ) {
+                (active as HTMLElement).blur();
+              }
+            }
+          }}
+        >
           <div className="theater-top">
             <span className="sector">{t("battle.sector")}</span>
             <label className="scan-toggle">
@@ -713,6 +726,7 @@ export function GameShell() {
             ships={revealedOpponentShips(game.jevBoard)}
             selected={lockedTarget}
             predicted={scan ? predictionCell : null}
+            keyboardLockMode={!fireOnClick}
             onCellActivate={handleSelect}
             onCellConfirm={handleCellConfirm}
             isCellEnabled={canSelect}
