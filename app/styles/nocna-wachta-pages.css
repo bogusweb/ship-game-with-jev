@@ -237,9 +237,10 @@
   margin-bottom: 14px;
 }
 
-.night .placement-quick-actions .secondary {
+.night .placement-quick-actions .primary {
   font-size: 10px;
   flex: 1;
+  min-width: 0;
   padding: 11px 10px;
 }
 
