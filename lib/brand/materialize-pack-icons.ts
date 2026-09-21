@@ -18,12 +18,11 @@ export function materializePackIcons(root = process.cwd()) {
   for (const [name, b64] of Object.entries(PACK_ICON_FILES)) {
     writeIfChanged(join(publicDir, name), Buffer.from(b64, "base64"));
   }
-  writeIfChanged(
-    join(root, "app/favicon.ico"),
-    Buffer.from(PACK_ICON_FILES["favicon.ico"], "base64"),
+  const faviconIco = Buffer.from(PACK_ICON_FILES["favicon.ico"], "base64");
+  const appleTouch = Buffer.from(
+    PACK_ICON_FILES["apple-touch-icon.png"],
+    "base64",
   );
-  writeIfChanged(
-    join(root, "app/apple-icon.png"),
-    Buffer.from(PACK_ICON_FILES["apple-touch-icon.png"], "base64"),
-  );
+  writeIfChanged(join(root, "public/favicon.ico"), faviconIco);
+  writeIfChanged(join(root, "public/apple-touch-icon.png"), appleTouch);
 }

@@ -1,7 +1,6 @@
 import type { SVGProps } from "react";
 
 export type IconName =
-  | "logo"
   | "target"
   | "reset"
   | "help"
@@ -11,26 +10,8 @@ export type IconName =
   | "jev";
 
 /** Paths from the handoff prototype `icons` map; exported copies live in
- *  public/nocna-wachta/ikona-*.svg. */
+ *  public/nocna-wachta/ikona-*.svg. Header logotype is the marketing pack. */
 const paths: Record<IconName, React.ReactNode> = {
-  logo: (
-    <>
-      <path d="M4 16 9 22h15l5-6H4Z" fill="currentColor" />
-      <path
-        d="M10 14V9h10l4 5M16 9V4m0 0 7 3h-7"
-        fill="none"
-        stroke="currentColor"
-        strokeWidth="1.7"
-        strokeLinejoin="round"
-      />
-      <path
-        d="M4 26q3-3 6 0t6 0 6 0 6 0"
-        fill="none"
-        stroke="currentColor"
-        strokeWidth="1.7"
-      />
-    </>
-  ),
   target: (
     <>
       <circle cx="12" cy="12" r="7" />
@@ -77,7 +58,7 @@ export function Icon({
   name,
   ...rest
 }: { name: IconName } & SVGProps<SVGSVGElement>) {
-  const box = name === "logo" || name === "jev" ? "0 0 32 32" : "0 0 24 24";
+  const box = name === "jev" ? "0 0 32 32" : "0 0 24 24";
   return (
     <svg
       viewBox={box}
