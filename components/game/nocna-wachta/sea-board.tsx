@@ -53,6 +53,8 @@ export type SeaBoardProps = {
   isCellEnabled?: (row: number, col: number) => boolean;
   /** Suffix appended to each cell's accessible name. */
   cellHint?: (row: number, col: number, state: ShotCellState) => string;
+  /** Lock-then-fire mode: roving tabindex + keyboard focus sync. */
+  keyboardLockMode?: boolean;
   className?: string;
 };
 
@@ -106,6 +108,7 @@ export function SeaBoard({
   onCellLeave,
   isCellEnabled,
   cellHint,
+  keyboardLockMode = false,
   className,
 }: SeaBoardProps) {
   const uid = useId().replace(/:/g, "");
@@ -165,6 +168,12 @@ export function SeaBoard({
     const onBoard = cellRefs.current.some((row) =>
       row.some((cell) => cell === active),
     );
+    if (!keyboardLockMode) {
+      if (onBoard && active instanceof SVGElement) {
+        active.blur();
+      }
+      return;
+    }
     if (!onBoard) return;
     const target = cellRefs.current[focusCell.row]?.[focusCell.col];
     if (target && active !== target) target.focus({ preventScroll: true });
@@ -176,6 +185,7 @@ export function SeaBoard({
       viewBox="0 0 660 655"
       role="group"
       aria-label={ariaLabel}
+      data-keyboard-lock={keyboardLockMode || undefined}
       onMouseLeave={onCellLeave}
     >
       <defs>
@@ -321,6 +331,7 @@ export function SeaBoard({
                   height="54"
                   role="button"
                   tabIndex={
+                    keyboardLockMode &&
                     enabled &&
                     focusCell.row === row &&
                     focusCell.col === col
@@ -332,7 +343,16 @@ export function SeaBoard({
                   ref={(node) => {
                     cellRefs.current[row][col] = node;
                   }}
-                  onClick={enabled ? () => onCellActivate?.(row, col) : undefined}
+                  onClick={
+                    enabled
+                      ? (event) => {
+                          onCellActivate?.(row, col);
+                          if (!keyboardLockMode) {
+                            (event.currentTarget as SVGRectElement).blur();
+                          }
+                        }
+                      : undefined
+                  }
                   onKeyDown={(event) => handleKey(event, row, col)}
                   onMouseEnter={
                     onCellHover ? () => onCellHover(row, col) : undefined
