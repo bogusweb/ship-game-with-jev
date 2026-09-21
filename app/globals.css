@@ -40,8 +40,6 @@
   --sj-radius-board: 13px;
   /* Paweł desktop-wide column (1440 / >1100). 801–1100 uses 246px. */
   --sj-layout-column: 550px;
-  --sj-layout-sidebar: 296px;
-  --sj-layout-mini-board: 270px;
 }
 
 @theme inline {
